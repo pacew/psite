@@ -26,6 +26,8 @@ if op == "install":
     if len(sys.argv) >= 4:
         conf_key = sys.argv[3]
     psite.install(site_name, conf_key)
+elif op == "mkschema":
+    psite.mkschema()
 else:
     print("unknown cmd:", op)
     sys.exit(1)
