@@ -1,6 +1,8 @@
-import re
 import os
+import sys
+import re
 import getpass
+import random
 
 import psite
 
@@ -86,7 +88,7 @@ def add_rewrites(ssl_flag):
    conf += "  RewriteRule ^(.*) /var/www/html/$1 [L]\n"
    conf += "\n"
 
-   if cfg['ssl_port'] != 0 and not ssl_flag:
+   if cfg['ssl_enabled'] and not ssl_flag:
       # this is the http version of an ssl site ... redirect to https
       conf += "  RewriteRule ^/(.*) {}$1 [R]\n".format(cfg['main_url'])
       conf += "\n"
@@ -135,7 +137,7 @@ def make_apache_conf():
    conf += "</Directory>\n"
 
    conf += make_virtual_host(False, cfg['plain_port'])
-   if cfg['ssl_port']:
+   if cfg['ssl_enabled']:
       conf += make_virtual_host(True, cfg['ssl_port'])
 
    return conf
@@ -162,7 +164,7 @@ def setup_siteid(site_name_arg, conf_key_arg):
 
    if not 'site_name' in cfg:
       if site_name_arg is None:
-         print("must specify site_name for install call to install-site")
+         print("must specify site_name for first call to install-site")
          sys.exit(1)
       else:
          cfg['site_name'] = site_name_arg
@@ -186,7 +188,7 @@ def setup_dirs():
       print("sudo sh -c 'mkdir -pm775 {0}; chown www-data.www-data {0}"
             .format(cfg['aux_dir']))
 
-def setup_ports():
+def setup_name_and_ports():
    cfg = psite.get_cfg()
 
    nat_info = re.split("\s+", psite.slurp_file ("/etc/apache2/NAT_INFO"))
@@ -211,16 +213,13 @@ def setup_urls():
    cfg = psite.get_cfg()
    
    cfg['plain_url'] = make_url("http", cfg['external_name'], cfg['plain_port'])
-   cfg['main_url'] = cfg['plain_url']
 
-   if find_certs():
-      if cfg.get("ssl_port", 0) == 0:
-         cfg['ssl_port'] = get_free_port()
-      cfg['ssl_url'] = make_url("https", cfg['external_name'], cfg['ssl_port'])
-      cfg['main_url'] = cfg['ssl_url']
+   if cfg['ssl_enabled']:
+       cfg['ssl_url'] = make_url("https", cfg['external_name'], cfg['ssl_port'])
+       cfg['main_url'] = cfg['ssl_url']
    else:
-      cfg['ssl_port'] = 0
-      cfg['ssl_url'] = ""
+       cfg['ssl_url'] = ""
+       cfg['main_url'] = cfg['plain_url']
 
 def copy_psite_php():
     name = "{}/psite.php".format(os.path.dirname(__file__))
@@ -228,13 +227,31 @@ def copy_psite_php():
     with open("psite.php", "w") as outf:
         outf.write(text)
 
+def setup_ssl():
+    cfg = psite.get_cfg()
+
+    if psite.get_option("ssl", "") == "no":
+        cfg['ssl_enabled'] = False
+        return
+
+    if not find_certs():
+        cfg['ssl_enabled'] = False
+        return
+
+    cfg['ssl_enabled'] = True
+    if cfg.get('ssl_port', 0) == 0:
+        cfg['ssl_port'] = get_free_port()
+
 def install(site_name_arg=None, conf_key_arg=None):
    cfg = psite.get_cfg()
+   setup_siteid(site_name_arg, conf_key_arg)
+
    cfg['db'] = psite.get_option("db", "")
 
-   setup_siteid(site_name_arg, conf_key_arg)
+   setup_name_and_ports()
+   setup_ssl()
+
    setup_dirs()
-   setup_ports()
    setup_urls()
    setup_apache()
 

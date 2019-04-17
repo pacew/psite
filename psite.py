@@ -7,8 +7,13 @@ from install import install
 from db import mkschema
 
 def read_json(name, default=None):
-   with open(name) as f:
-      return json.load (f)
+   try:
+      with open(name) as f:
+         return json.load (f)
+   except(OSError):
+      if default is not None:
+         return default
+      raise
 
 def write_json(name, val):
    with open("TMP.json", "w") as f:
