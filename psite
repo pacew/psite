@@ -1,0 +1,32 @@
+#! /usr/bin/env python3
+
+import sys
+import os
+
+#print(os.path.dirname(__file__))
+#sys.path.insert(0, os.path.dirname(__file__))
+
+import psite
+
+def usage():
+    print("usage: psite cmd")
+    sys.exit(1)
+    
+
+if len(sys.argv) < 2:
+    usage()
+    
+op = sys.argv[1]
+
+if op == "install":
+    site_name = None
+    conf_key = None
+    if len(sys.argv) >= 3:
+        site_name = sys.argv[2]
+    if len(sys.argv) >= 4:
+        conf_key = sys.argv[3]
+    psite.install(site_name, conf_key)
+else:
+    print("unknown cmd:", op)
+    sys.exit(1)
+    
