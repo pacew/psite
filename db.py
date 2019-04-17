@@ -1,4 +1,7 @@
+import os
+import sys
 import re
+import grp
 
 # apt-get install python3-psycopg2
 import psycopg2
@@ -6,6 +9,19 @@ import sqlite3
 
 
 import psite
+
+def make_writable_for_server(filename):
+    stat = os.stat(filename)
+    try:
+        group = grp.getgrgid(stat.st_gid).gr_name
+    except(KeyError):
+        group = None
+
+    if group != "www-data":
+        print("sudo chgrp www-data {}".format(filename))
+
+    if stat.st_mode & int("020", 8) == 0:
+        print("sudo chmod g+w {}".format(filename))
 
 db = None
 
@@ -18,15 +34,16 @@ def get_db():
    db = dict(db=cfg["db"])
 
    if cfg["db"] == "sqlite3":
-      filename = "{0}.db".format(cfg['site_name'])
+      filename = "{}/{}.db".format(cfg['aux_dir'], cfg['siteid'])
       db['conn'] = sqlite3.connect(filename)
+      make_writable_for_server(filename)
       db['cursor'] = db['conn'].cursor()
       db['table_exists'] = sqlite3_table_exists
       db['column_exists'] = sqlite3_column_exists
       db['commit'] = sqlite3_commit
       return db
    elif cfg["db"] == "postgres":
-      dsn = "postgresql:///{0}".format(cfg['siteid'])
+      dsn = "postgresql:///{}".format(cfg['siteid'])
       try:
          db['conn'] = psycopg2.connect (dsn)
       except(psycopg2.OperationalError):
@@ -54,7 +71,7 @@ def sqlite3_table_exists(table):
 def sqlite3_column_exists(table, column):
    db = get_db()
    cur = db['cursor']
-   stmt = "pragma table_info({0})".format(table)
+   stmt = "pragma table_info({})".format(table)
    cur.execute(stmt)
    for row in cur:
       if row[1] == column:

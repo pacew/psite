@@ -179,8 +179,12 @@ def setup_dirs():
    cfg['src_dir'] = os.getcwd()
    cfg['static_dir'] = "{}/static".format(cfg['src_dir'])
    cfg['www_dir'] = "/var/www/{}".format(cfg['siteid'])
+   cfg['aux_dir'] = "/var/{}".format(cfg['siteid'])
    if not os.path.exists(cfg['www_dir']):
       print("sudo ln -sf {} {}".format(cfg['static_dir'], cfg['www_dir']))
+   if not os.path.exists(cfg['aux_dir']):
+      print("sudo sh -c 'mkdir -pm775 {0}; chown www-data.www-data {0}"
+            .format(cfg['aux_dir']))
 
 def setup_ports():
    cfg = psite.get_cfg()
@@ -218,21 +222,27 @@ def setup_urls():
       cfg['ssl_port'] = 0
       cfg['ssl_url'] = ""
 
+def copy_psite_php():
+    name = "{}/psite.php".format(os.path.dirname(__file__))
+    text = psite.slurp_file(name)
+    with open("psite.php", "w") as outf:
+        outf.write(text)
+
 def install(site_name_arg=None, conf_key_arg=None):
    cfg = psite.get_cfg()
+   cfg['db'] = psite.get_option("db", "")
 
    setup_siteid(site_name_arg, conf_key_arg)
    setup_dirs()
    setup_ports()
    setup_urls()
-
-   cfg['db'] = psite.get_option("db", "")
-
    setup_apache()
 
+   copy_psite_php()
+   
    print(cfg['plain_url'])
    if cfg.get('ssl_url', None) != None:
       print(cfg['ssl_url'])
 
    psite.write_json("cfg.json", cfg)
-
+   

@@ -1,26 +1,14 @@
 import json
 import os
 import sys
-import re
-import getpass
 import socket
-import random
-
-
 
 from install import install
 from db import mkschema
 
 def read_json(name, default=None):
-   try:
-      with open(name) as f:
-         val = json.load (f)
-   except(OSError, ValueError):
-      if default is not None:
-         return default
-      print ("Can't parse", name)
-      sys.exit(1)
-   return val
+   with open(name) as f:
+      return json.load (f)
 
 def write_json(name, val):
    with open("TMP.json", "w") as f:
