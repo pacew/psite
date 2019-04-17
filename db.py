@@ -79,7 +79,7 @@ def sqlite3_column_exists(table, column):
    return False
 
 def sqlite3_commit():
-   pass
+    db['conn'].commit()
 
 def postgres_table_exists(table):
    db = get_db ();
@@ -107,11 +107,11 @@ def postgres_column_exists(table, column):
 def postgres_commit():
    query("commit")
 
-def query(stmt, args=None):
-   db = get_db()
-   if db["db"] == "postgres":
-      stmt = re.sub("[?]", "%s", stmt)
-   return (db['cursor'].execute(stmt, args))
+def query(stmt, args=()):
+    db = get_db()
+    if db["db"] == "postgres":
+        stmt = re.sub("[?]", "%s", stmt)
+    return (db['cursor'].execute(stmt, args))
 
 def fetch():
    db = get_db()
@@ -141,17 +141,17 @@ def make_column(table, column, coltype):
       db['cursor'].execute(stmt)
 
 def get_seq():
-   query("select lastval from seq")
-   result = fetch()
-   if result == None:
-      curval = 100
-      query("insert into seq (lastval) values (?)", (curval,))
-      commit()
-   else:
-      curval = result[0] + 1
-      query("update seq set lastval = ?", (curval,))
-      commit()
-   return curval
+    query("select lastval from seq")
+    result = fetch()
+    if result == None:
+        curval = 100
+        query("insert into seq (lastval) values (?)", (curval,))
+        commit()
+    else:
+        curval = result[0] + 1
+        query("update seq set lastval = ?", (curval,))
+        commit()
+        return curval
 
 def mkschema():
     filename = "schema"

@@ -4,7 +4,7 @@ import sys
 import socket
 
 from install import install
-from db import mkschema
+from db import mkschema, query, fetch, get_seq, commit
 
 def read_json(name, default=None):
    try:
