@@ -222,10 +222,17 @@ def setup_urls():
        cfg['main_url'] = cfg['plain_url']
 
 def copy_psite_php():
-    name = "{}/psite.php".format(os.path.dirname(__file__))
-    text = psite.slurp_file(name)
-    with open("psite.php", "w") as outf:
-        outf.write(text)
+    if True:
+       src = "{}/psite.php".format(os.path.dirname(__file__))
+       try:
+          os.remove("psite.php")
+       except(FileNotFoundError):
+          pass
+       os.symlink (src, "psite.php");
+    else:
+       text = psite.slurp_file(name)
+       with open("psite.php", "w") as outf:
+          outf.write(text)
 
 def setup_ssl():
     cfg = psite.get_cfg()

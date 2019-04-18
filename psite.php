@@ -72,7 +72,7 @@ function make_db_connection ($db, $dbparams, $create) {
                 printf ("%s does not exist", $name);
                 exit();
             }
-            $dsn = sprintf ("sqlite:%s/%s.db", $cfg['aux_dir'], $cfg['siteid']);
+            $dsn = sprintf ("sqlite:%s", $name);
             $db->pdo = new PDO ($dsn);
         } else {
             fatal ("invalid db configured");
@@ -614,3 +614,19 @@ function mktable ($hdr, $rows) {
 	return ($ret);
 }
 
+/* router */
+if (preg_match ('|^/([-_a-zA-Z0-9]+.php)$|', 
+                $_SERVER['SCRIPT_NAME'],
+                $script_matches)) {
+    $script_name = $script_matches[1];
+    $script_fullname = sprintf ("%s/%s", $_SERVER['APP_ROOT'], $script_name);
+    if (file_exists ($script_fullname)) {
+        require ($script_fullname);
+        /* should not return */
+        echo ("route error " . $script_name);
+        exit();
+    } else {
+        echo ("missing script " . $script_name);
+        exit();
+    }
+}
