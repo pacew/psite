@@ -1,1 +1,3 @@
 https://packaging.python.org/tutorials/packaging-projects/
+
+apt-get install python3-flake8

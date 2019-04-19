@@ -1,5 +1,4 @@
 <?php
-
 ob_start ();
 
 $app_root = @$_SERVER['APP_ROOT'];
@@ -457,6 +456,15 @@ function mklink ($text, $target) {
 			 fix_target ($target), h($text)));
 }
 
+function mklink_class ($text, $target, $class) {
+	if (trim ($text) == "")
+		return ("");
+	if (trim ($target) == "")
+		return (h($text));
+	return (sprintf ("<a href='%s' class='%s'>%s</a>",
+                     fix_target ($target), h($class), h($text)));
+}
+
 function mklink_nw ($text, $target) {
 	if (trim ($text) == "")
 		return ("");
@@ -614,19 +622,4 @@ function mktable ($hdr, $rows) {
 	return ($ret);
 }
 
-/* router */
-if (preg_match ('|^/([-_a-zA-Z0-9]+.php)$|', 
-                $_SERVER['SCRIPT_NAME'],
-                $script_matches)) {
-    $script_name = $script_matches[1];
-    $script_fullname = sprintf ("%s/%s", $_SERVER['APP_ROOT'], $script_name);
-    if (file_exists ($script_fullname)) {
-        require ($script_fullname);
-        /* should not return */
-        echo ("route error " . $script_name);
-        exit();
-    } else {
-        echo ("missing script " . $script_name);
-        exit();
-    }
-}
+
