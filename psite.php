@@ -345,6 +345,13 @@ function get_seq ($db = NULL) {
 
 function json_finish ($val) {
     do_commits ();
+    if (@$_REQUEST['debug']) {
+        echo ("<pre>\n");
+        echo (json_encode ($val));
+        echo ("</pre>\n");
+        exit (0);
+    }
+
 	if (ob_list_handlers ())
 		ob_clean ();
     header ("Content-Type: application/json");
@@ -461,8 +468,11 @@ function mklink_class ($text, $target, $class) {
 		return ("");
 	if (trim ($target) == "")
 		return (h($text));
-	return (sprintf ("<a href='%s' class='%s'>%s</a>",
-                     fix_target ($target), h($class), h($text)));
+    $c = "";
+    if ($class != "")
+        $c = sprintf ("class='%s'", $class);
+	return (sprintf ("<a href='%s' $c>%s</a>",
+                     fix_target ($target), h($text)));
 }
 
 function mklink_nw ($text, $target) {

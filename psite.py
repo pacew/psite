@@ -1,9 +1,11 @@
 import json
 import os
 import socket
+from html.parser import HTMLParser
 
 from install import install  # noqa: F401
-from db import mkschema, query, fetch, get_seq, commit  # noqa: F401
+from db import (mkschema, query, fetch, get_seq, commit,  # noqa: F401
+                getvar, setvar)
 
 
 def read_json(name, default=None):
@@ -68,3 +70,19 @@ def get_option(name, default=None):
         return options[name]
     else:
         return default
+
+
+class MLStripper(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.reset()
+        self.fed = []
+    def handle_data(self, d):
+        self.fed.append(d)
+    def get_data(self):
+        return ''.join(self.fed)
+
+def strip_tags(html):
+    s = MLStripper()
+    s.feed(html)
+    return s.get_data()

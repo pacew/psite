@@ -74,6 +74,7 @@ def sqlite3_table_exists(table):
 
 
 def sqlite3_column_exists(table, column):
+    
     db = get_db()
     cur = db['cursor']
     stmt = "pragma table_info({})".format(table)
@@ -81,7 +82,7 @@ def sqlite3_column_exists(table, column):
     for row in cur:
         if row[1] == column:
             return True
-        return False
+    return False
 
 
 def sqlite3_commit():
@@ -132,6 +133,22 @@ def fetch():
 def commit():
     db = get_db()
     return db['commit']()
+
+
+def getvar(name):
+    query("select val from vars where name = ?", (name,))
+    r = fetch()
+    if r is None:
+        return ""
+    return r[0]
+
+
+def setvar(name, val):
+    query("select val from vars where name = ?", (name,))
+    if fetch() is None:
+        query("insert into vars (name, val) values (?, ?)", (name, val))
+    else:
+        query("update vars set val = ? where name = ?", (val, name))
 
 
 def table_exists(table):
