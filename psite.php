@@ -632,4 +632,17 @@ function mktable ($hdr, $rows) {
 	return ($ret);
 }
 
+function make_option ($val, $curval, $desc)
+{
+	global $body;
+
+	if ($val == $curval)
+		$selected = "selected";
+	else
+		$selected = "";
+	
+	$body .= sprintf ("<option value='%d' $selected>", $val);
+	$body .= h ($desc);
+	$body .= "</option>\n";
+}
 
