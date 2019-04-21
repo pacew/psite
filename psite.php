@@ -347,7 +347,7 @@ function json_finish ($val) {
     do_commits ();
     if (@$_REQUEST['debug']) {
         echo ("<pre>\n");
-        echo (json_encode ($val));
+        echo (json_encode ($val, JSON_PRETTY_PRINT));
         echo ("</pre>\n");
         exit (0);
     }
