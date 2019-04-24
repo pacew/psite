@@ -202,7 +202,7 @@ def setup_dirs():
     if not os.path.exists(cfg['www_dir']):
         print("sudo ln -sf {} {}".format(cfg['static_dir'], cfg['www_dir']))
         if not os.path.exists(cfg['aux_dir']):
-            print("sudo sh -c 'mkdir -pm775 {0}; chown www-data.www-data {0}"
+            print("sudo sh -c 'mkdir -pm2775 {0}; chown www-data.www-data {0}"
                   .format(cfg['aux_dir']))
 
 

@@ -27,7 +27,7 @@ function make_db_connection ($db, $dbparams, $create) {
                     $default_dbparams['password'] = $lsconf['password'];
                 } else {
                     $default_dbparams['host'] = '';
-                    $default_dbparams['user'] = $pw['name'];
+                    $default_dbparams['user'] = 'apache';
                     $default_dbparams['password'] = '';
                 }
             } else if ($options['db'] == "mysql") {

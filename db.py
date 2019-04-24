@@ -46,12 +46,13 @@ def get_db():
         db['commit'] = sqlite3_commit
         return db
     elif cfg["db"] == "postgres":
-        dsn = "postgresql:///{}".format(cfg['siteid'])
+        dsn = "postgresql://apache@/{}".format(cfg['siteid'])
         try:
             db['conn'] = psycopg2.connect(dsn)
         except(psycopg2.OperationalError):
             print("can't connect to database, maybe do:")
-            print("createdb -O www-data {}".format(cfg['siteid']))
+            print("createdb -O apache {}".format(cfg['siteid']))
+            raise
             sys.exit(1)
         db['cursor'] = db['conn'].cursor()
         db['table_exists'] = postgres_table_exists
