@@ -244,6 +244,8 @@ def setup_urls():
         cfg['ssl_url'] = ""
         cfg['main_url'] = cfg['plain_url']
 
+    cfg['local_url'] = re.sub(r'/[-_a-z0-9]+', "/local", cfg['main_url'])
+
 
 def install_psite_file(basename):
     src_fullname = "{}/{}".format(os.path.dirname(__file__), basename)
@@ -293,7 +295,8 @@ def install(site_name_arg=None, conf_key_arg=None):
     install_psite_file("router.php")
 
     print(cfg['plain_url'])
-    if cfg.get('ssl_url', None) is not None:
+    if cfg['ssl_url'] != "":
         print(cfg['ssl_url'])
+    print(cfg['local_url'])
 
-        psite.write_json("cfg.json", cfg)
+    psite.write_json("cfg.json", cfg)
