@@ -326,6 +326,16 @@ function clrsess () {
 	}
 }
 
+function getvar ($name) {
+    $q = query ("select val"
+        ." from vars"
+        ." where var = ?",
+        $name);
+    if (($r = fetch ($q)) != NULL)
+        return ($r->val);
+    return ("");
+}
+
 function get_seq ($db = NULL) {
 	$q = query_db ($db,
 		       "select lastval"
@@ -426,6 +436,8 @@ function make_absolute ($rel) {
 function redirect ($target) {
 	$target = make_absolute ($target);
 
+	if (session_id ())
+		session_write_close ();
 	do_commits ();
 	if (ob_list_handlers ())
 		ob_clean ();

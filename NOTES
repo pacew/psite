@@ -1,3 +1,9 @@
+psite install
+
+/var/www/SITEID gets linked to ./static
+any url request not satisfied by ./static is sent to index.php
+
+
 https://packaging.python.org/tutorials/packaging-projects/
 
 apt-get install python3-flake8

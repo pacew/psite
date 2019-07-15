@@ -131,6 +131,8 @@ def make_virtual_host(ssl_flag, port):
     conf += "  php_flag display_errors on\n"
     conf += "  DocumentRoot {}\n".format(cfg['www_dir'])
     conf += "  SetEnv APP_ROOT {}\n".format(cfg['src_dir'])
+    conf += "  SetEnv PSITE_DIR {}\n".format(cfg['psite_dir'])
+    conf += "  SetEnv PSITE_PHP {}/psite.php\n".format(cfg['psite_dir'])
     conf += "  <Directory {}>\n".format(cfg['www_dir'])
     conf += add_valhtml()
     conf += add_nocache()
@@ -195,6 +197,7 @@ def setup_siteid(site_name_arg, conf_key_arg):
 
 def setup_dirs():
     cfg = psite.get_cfg()
+    cfg['psite_dir'] = os.path.dirname(__file__);
     cfg['src_dir'] = os.getcwd()
     cfg['static_dir'] = "{}/static".format(cfg['src_dir'])
     cfg['www_dir'] = "/var/www/{}".format(cfg['siteid'])
@@ -246,22 +249,6 @@ def setup_urls():
 
     cfg['local_url'] = re.sub(r'/[-_a-z0-9]+', "/local", cfg['main_url'])
 
-
-def install_psite_file(basename):
-    src_fullname = "{}/{}".format(os.path.dirname(__file__), basename)
-
-    if True:
-        try:
-            os.remove(basename)
-        except(FileNotFoundError):
-            pass
-        os.symlink(src_fullname, basename)
-    else:
-        text = psite.slurp_file(src_fullname)
-        with open(basename, "w") as outf:
-            outf.write(text)
-
-
 def setup_ssl():
     cfg = psite.get_cfg()
 
@@ -290,9 +277,6 @@ def install(site_name_arg=None, conf_key_arg=None):
     setup_dirs()
     setup_urls()
     setup_apache()
-
-    install_psite_file("psite.php")
-    install_psite_file("router.php")
 
     print(cfg['plain_url'])
     if cfg['ssl_url'] != "":
