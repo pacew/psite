@@ -110,10 +110,10 @@ def add_rewrites(ssl_flag):
     conf += "  RewriteRule ^/(.*) {}$1 [R]\n".format(cfg['main_url'])
     conf += "\n"
 
-    # send all non-static files to index.php
+    # send all non-static files to app.php
     conf += ("  RewriteCond {}%{{REQUEST_FILENAME}} !-f\n"
              .format(cfg['www_dir']))
-    conf += "  RewriteRule .* {}/index.php\n".format(cfg['src_dir'])
+    conf += "  RewriteRule .* {}/app.php\n".format(cfg['src_dir'])
 
     return conf
 
@@ -137,7 +137,7 @@ def make_virtual_host(ssl_flag, port):
     conf += add_valhtml()
     conf += add_nocache()
     conf += "  </Directory>\n"
-    conf += "  DirectoryIndex index.php\n"
+    conf += "  DirectoryIndex disabled\n"
     conf += add_rewrites(ssl_flag)
     conf += "</VirtualHost>\n"
     return conf

@@ -1,12 +1,14 @@
 import os
 import sys
 import re
+import pwd
 import grp
+import time
 
-# apt-get install python3-psycopg2
+# apt-get install python3-psycopg2 python3-pymysql
 import psycopg2
 import sqlite3
-
+import pymysql
 
 import psite
 
@@ -58,6 +60,27 @@ def get_db():
         db['table_exists'] = postgres_table_exists
         db['column_exists'] = postgres_column_exists
         db['commit'] = postgres_commit
+        return db
+    elif cfg["db"] == "mysql":
+        try:
+            # get unix_socket name: mysqladmin variables | grep sock
+            # user=pwd.getpwuid(os.getuid()).pw_name,
+            db['conn']=pymysql.connect(unix_socket='/var/run/mysqld/mysqld.sock',
+                                       db=cfg['siteid'])
+        except(pymysql.err.OperationalError, pymysql.err.InternalError):
+            print("")
+            print("*******")
+            print("can't connect to database, maybe do:")
+            print("mysql -Nrse 'create database `{}`'".format(cfg['siteid']));
+            print("*******")
+            print("")
+            print("")
+            raise
+            sys.exit(1)
+        db['cursor'] = db['conn'].cursor()
+        db['table_exists'] = mysql_table_exists
+        db['column_exists'] = mysql_column_exists
+        db['commit'] = mysql_commit
         return db
     else:
         print("get_db failed")
@@ -119,9 +142,40 @@ def postgres_commit():
     query("commit")
 
 
+def mysql_table_exists(table):
+    cfg = psite.get_cfg()
+    db = get_db()
+    cur = db['cursor']
+
+    cur.execute("select 0"
+                " from information_schema.tables"
+                " where table_schema = %s"
+                "   and table_name = %s",
+                (cfg['siteid'], table))
+    return fetch() is not None
+
+
+def mysql_column_exists(table, column):
+    cfg = psite.get_cfg()
+    db = get_db()
+    cur = db['cursor']
+
+    cur.execute("select 0"
+                " from information_schema.columns"
+                " where table_schema = %s"
+                "   and table_name = %s"
+                "   and column_name = %s",
+                (cfg['siteid'], table, column))
+    return fetch() is not None
+
+
+def mysql_commit():
+    query("commit")
+
+
 def query(stmt, args=()):
     db = get_db()
-    if db["db"] == "postgres":
+    if db["db"] == "postgres" or db["db"] == "mysql":
         stmt = re.sub("[?]", "%s", stmt)
     return (db['cursor'].execute(stmt, args))
 
@@ -137,7 +191,7 @@ def commit():
 
 
 def getvar(name):
-    query("select val from vars where name = ?", (name,))
+    query("select val from vars where var = ?", (name,))
     r = fetch()
     if r is None:
         return ""
@@ -212,3 +266,41 @@ def mkschema():
                 typename = words[2]
                 make_column(table, column, typename)
                 commit()
+
+# mkdir -p /var/apply-pace/backups
+# fname=/var/apply-pace/backups/`date +apply-pace-%Y%m%dT%H%M%S`.sql.gz
+# /home/pace/apply/remdb pg_dump \
+#    --no-owner \
+#    --no-acl \
+#    --compress=6 \
+#    --lock-wait-timeout=60000 \
+#    --file=$fname
+# ln -sf $fname /var/apply-pace/backups/latest.gz
+def daily_backup():
+    cfg = psite.get_cfg()
+    
+    backups_dir = "{}/backups".format(cfg['aux_dir'])
+    if not os.path.exists(backups_dir):
+        os.mkdir(backups_dir, 0o775)
+
+    ts = time.strftime("%Y%m%dT%H%M%S")
+    basename = "{}-{}.sql".format(cfg['siteid'], ts);
+    fullname = "{}/{}".format(backups_dir, basename)
+
+    cmd = ("mysqldump --single-transaction --result-file {} {}"
+           .format(fullname, cfg['siteid']));
+    if os.system(cmd) != 0:
+        print("db dump error")
+        sys.exit(1)
+
+    cmd = "gzip --force {}".format(fullname)
+    if os.system(cmd) != 0:
+        print("db dump error during compression")
+        sys.exit(1)
+    gzname = "{}.gz".format(basename)
+
+    latest = "{}/latest.gz".format(backups_dir)
+    if os.path.exists(latest):
+        os.remove(latest)
+    
+    os.symlink(gzname, latest)

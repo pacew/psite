@@ -658,3 +658,20 @@ function make_option ($val, $curval, $desc)
 	$body .= "</option>\n";
 }
 
+function router () {
+    $script_name = preg_replace ("|^/|", "", $_SERVER['SCRIPT_NAME']);
+
+    if (strcmp ($script_name, "") == 0)
+        $script_name = "index.php";
+
+    if (preg_match ('/^[-_a-zA-Z0-9]+.php$/', $script_name)) { 
+        /* safe name - only contains letters, digits, dash, or underline */
+        $script_fullname = sprintf ("%s/%s", $_SERVER['APP_ROOT'], $script_name);
+        if (file_exists ($script_fullname)) {
+            return ($script_fullname);
+        }
+    }
+    
+    echo ("route error " . h($script_name));
+    exit ();
+}
