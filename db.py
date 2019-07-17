@@ -1,7 +1,6 @@
 import os
 import sys
 import re
-import pwd
 import grp
 import time
 
@@ -65,13 +64,14 @@ def get_db():
         try:
             # get unix_socket name: mysqladmin variables | grep sock
             # user=pwd.getpwuid(os.getuid()).pw_name,
-            db['conn']=pymysql.connect(unix_socket='/var/run/mysqld/mysqld.sock',
-                                       db=cfg['siteid'])
+            db['conn'] = pymysql.connect(
+                unix_socket='/var/run/mysqld/mysqld.sock',
+                db=cfg['siteid'])
         except(pymysql.err.OperationalError, pymysql.err.InternalError):
             print("")
             print("*******")
             print("can't connect to database, maybe do:")
-            print("mysql -Nrse 'create database `{}`'".format(cfg['siteid']));
+            print("mysql -Nrse 'create database `{}`'".format(cfg['siteid']))
             print("*******")
             print("")
             print("")
@@ -98,7 +98,6 @@ def sqlite3_table_exists(table):
 
 
 def sqlite3_column_exists(table, column):
-    
     db = get_db()
     cur = db['cursor']
     stmt = "pragma table_info({})".format(table)
@@ -267,6 +266,7 @@ def mkschema():
                 make_column(table, column, typename)
                 commit()
 
+
 # mkdir -p /var/apply-pace/backups
 # fname=/var/apply-pace/backups/`date +apply-pace-%Y%m%dT%H%M%S`.sql.gz
 # /home/pace/apply/remdb pg_dump \
@@ -278,17 +278,17 @@ def mkschema():
 # ln -sf $fname /var/apply-pace/backups/latest.gz
 def daily_backup():
     cfg = psite.get_cfg()
-    
+
     backups_dir = "{}/backups".format(cfg['aux_dir'])
     if not os.path.exists(backups_dir):
         os.mkdir(backups_dir, 0o775)
 
     ts = time.strftime("%Y%m%dT%H%M%S")
-    basename = "{}-{}.sql".format(cfg['siteid'], ts);
+    basename = "{}-{}.sql".format(cfg['siteid'], ts)
     fullname = "{}/{}".format(backups_dir, basename)
 
     cmd = ("mysqldump --single-transaction --result-file {} {}"
-           .format(fullname, cfg['siteid']));
+           .format(fullname, cfg['siteid']))
     if os.system(cmd) != 0:
         print("db dump error")
         sys.exit(1)
@@ -302,5 +302,5 @@ def daily_backup():
     latest = "{}/latest.gz".format(backups_dir)
     if os.path.exists(latest):
         os.remove(latest)
-    
+
     os.symlink(gzname, latest)

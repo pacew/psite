@@ -197,7 +197,7 @@ def setup_siteid(site_name_arg, conf_key_arg):
 
 def setup_dirs():
     cfg = psite.get_cfg()
-    cfg['psite_dir'] = os.path.dirname(__file__);
+    cfg['psite_dir'] = os.path.dirname(__file__)
     cfg['src_dir'] = os.getcwd()
     cfg['static_dir'] = "{}/static".format(cfg['src_dir'])
     cfg['www_dir'] = "/var/www/{}".format(cfg['siteid'])
@@ -248,6 +248,7 @@ def setup_urls():
         cfg['main_url'] = cfg['plain_url']
 
     cfg['local_url'] = re.sub(r'/[-_a-z0-9]+', "/local", cfg['main_url'])
+
 
 def setup_ssl():
     cfg = psite.get_cfg()
