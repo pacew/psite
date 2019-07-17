@@ -267,15 +267,6 @@ def mkschema():
                 commit()
 
 
-# mkdir -p /var/apply-pace/backups
-# fname=/var/apply-pace/backups/`date +apply-pace-%Y%m%dT%H%M%S`.sql.gz
-# /home/pace/apply/remdb pg_dump \
-#    --no-owner \
-#    --no-acl \
-#    --compress=6 \
-#    --lock-wait-timeout=60000 \
-#    --file=$fname
-# ln -sf $fname /var/apply-pace/backups/latest.gz
 def daily_backup():
     cfg = psite.get_cfg()
 
@@ -318,3 +309,22 @@ def daily_backup():
         os.remove(latest)
 
     os.symlink(gzname, latest)
+
+
+def restore():
+    cfg = psite.get_cfg()
+
+    print("restore")
+    if len(sys.argv) < 3:
+        print("usage: psite restore filename")
+        sys.exit(1)
+    filename = sys.argv[2]
+
+    cmd = "mysql -Nrse 'drop database `{}`'".format(cfg['siteid'])
+    print(cmd)
+
+    cmd = "mysql -Nrse 'create database `{}`'".format(cfg['siteid'])
+    print(cmd)
+
+    cmd = "gunzip < {} | mysql {}".format(filename, cfg['siteid'])
+    print(cmd)

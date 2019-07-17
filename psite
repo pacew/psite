@@ -30,6 +30,8 @@ elif op == "mkschema":
     psite.mkschema()
 elif op == "daily_backup":
     psite.daily_backup()
+elif op == "restore":
+    psite.restore()
 elif op == "getvar":
     if (len(sys.argv) != 3):
         print("usage: getvar NAME")
