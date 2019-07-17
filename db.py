@@ -285,19 +285,33 @@ def daily_backup():
 
     ts = time.strftime("%Y%m%dT%H%M%S")
     basename = "{}-{}.sql".format(cfg['siteid'], ts)
-    fullname = "{}/{}".format(backups_dir, basename)
-
-    cmd = ("mysqldump --single-transaction --result-file {} {}"
-           .format(fullname, cfg['siteid']))
-    if os.system(cmd) != 0:
-        print("db dump error")
-        sys.exit(1)
-
-    cmd = "gzip --force {}".format(fullname)
-    if os.system(cmd) != 0:
-        print("db dump error during compression")
-        sys.exit(1)
     gzname = "{}.gz".format(basename)
+
+    if cfg["db"] == "mysql":
+        cmd = ("mysqldump --single-transaction --result-file {}/{} {}"
+               .format(backups_dir, basename, cfg['siteid']))
+        if os.system(cmd) != 0:
+            print("db dump error")
+            sys.exit(1)
+
+        cmd = "gzip --force {}/{}".format(backups_dir, basename)
+        if os.system(cmd) != 0:
+            print("db dump error during compression")
+            sys.exit(1)
+    elif cfg["db"] == "postgres":
+        cmd = ("pg_dump"
+               " --dbname={}"
+               " --file={}/{}"
+               " --no-owner"
+               " --no-acl"
+               " --compress=6"
+               " --lock-wait-timeout=60000").format(
+                   cfg['siteid'],
+                   backups_dir,
+                   gzname)
+        if os.system(cmd) != 0:
+            print("db dump error")
+            sys.exit(1)
 
     latest = "{}/latest.gz".format(backups_dir)
     if os.path.exists(latest):
