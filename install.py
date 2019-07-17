@@ -266,6 +266,18 @@ def setup_ssl():
         cfg['ssl_port'] = get_free_port()
 
 
+def setup_cron():
+    cfg = psite.get_cfg()
+
+    hour = random.randrange(3, 6)
+    minute = random.randrange(0, 60)
+    cron = ("# created by: psite install\n"
+            "{} {} * * * cd {} && {}/psite daily-backup\n"
+            ).format(minute, hour, cfg['src_dir'], cfg['psite_dir'])
+    with open("TMP.crontab", "w") as outf:
+        outf.write(cron)
+
+
 def install(site_name_arg=None, conf_key_arg=None):
     cfg = psite.get_cfg()
     setup_siteid(site_name_arg, conf_key_arg)
@@ -278,6 +290,7 @@ def install(site_name_arg=None, conf_key_arg=None):
     setup_dirs()
     setup_urls()
     setup_apache()
+    setup_cron()
 
     print(cfg['plain_url'])
     if cfg['ssl_url'] != "":
