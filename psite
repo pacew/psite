@@ -2,6 +2,7 @@
 
 import sys
 import os
+import getpass
 
 #print(os.path.dirname(__file__))
 #sys.path.insert(0, os.path.dirname(__file__))
@@ -35,11 +36,19 @@ def cmd_getvar():
 cmds.append(["getvar", cmd_getvar])
 
 def cmd_setvar():
-    if (len(sys.argv) != 4):
+    if len(sys.argv) != 4:
         print("usage: setvar NAME VAL")
         sys.exit(1)
     psite.setvar(sys.argv[2], sys.argv[3])
 cmds.append(["setvar", cmd_setvar])
+
+def cmd_db_password():
+    pw = getpass.getpass()
+    with open(".psite_db_passwd", "w") as outf:
+        outf.write(pw)
+        outf.write("\n")
+
+cmds.append(["db_password", cmd_db_password])
 
 cmds.append(["mkschema", psite.mkschema])
 cmds.append(["daily_backup", psite.daily_backup])

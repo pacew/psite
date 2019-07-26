@@ -283,6 +283,7 @@ def install(site_name_arg=None, conf_key_arg=None):
     setup_siteid(site_name_arg, conf_key_arg)
 
     cfg['db'] = psite.get_option("db", "")
+    cfg['dbname'] = psite.get_option("db_dbname", cfg['siteid'])
 
     setup_name_and_ports()
     setup_ssl()

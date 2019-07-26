@@ -38,7 +38,7 @@ def get_db():
     db = dict(db=cfg["db"])
 
     if cfg["db"] == "sqlite3":
-        filename = "{}/{}.db".format(cfg['aux_dir'], cfg['siteid'])
+        filename = "{}/{}.db".format(cfg['aux_dir'], cfg['dbname'])
         db['conn'] = sqlite3.connect(filename)
         make_writable_for_server(filename)
         db['cursor'] = db['conn'].cursor()
@@ -47,12 +47,12 @@ def get_db():
         db['commit'] = sqlite3_commit
         return db
     elif cfg["db"] == "postgres":
-        dsn = "postgresql://apache@/{}".format(cfg['siteid'])
+        dsn = "postgresql://apache@/{}".format(cfg['dbname'])
         try:
             db['conn'] = psycopg2.connect(dsn)
         except(psycopg2.OperationalError):
             print("can't connect to database, maybe do:")
-            print("createdb -O apache {}".format(cfg['siteid']))
+            print("createdb -O apache {}".format(cfg['dbname']))
             raise
             sys.exit(1)
         db['cursor'] = db['conn'].cursor()
@@ -62,16 +62,24 @@ def get_db():
         return db
     elif cfg["db"] == "mysql":
         try:
-            # get unix_socket name: mysqladmin variables | grep sock
-            # user=pwd.getpwuid(os.getuid()).pw_name,
-            db['conn'] = pymysql.connect(
-                unix_socket='/var/run/mysqld/mysqld.sock',
-                db=cfg['siteid'])
+            params = {}
+            params['db'] = cfg['dbname']
+
+            if psite.get_option("db_host") is not None:
+                params['host'] = psite.get_option("db_host")
+                params['user'] = psite.get_option("db_user")
+                pw = psite.slurp_file(".psite_db_passwd").strip()
+                params['password'] = pw
+            else:
+                # get unix_socket name: mysqladmin variables | grep sock
+                params['unix_socket'] = '/var/run/mysqld/mysqld.sock'
+
+            db['conn'] = pymysql.connect(**params)
         except(pymysql.err.OperationalError, pymysql.err.InternalError):
             print("")
             print("*******")
             print("can't connect to database, maybe do:")
-            print("mysql -Nrse 'create database `{}`'".format(cfg['siteid']))
+            print("mysql -Nrse 'create database `{}`'".format(cfg['dbname']))
             print("*******")
             print("")
             print("")
@@ -150,7 +158,7 @@ def mysql_table_exists(table):
                 " from information_schema.tables"
                 " where table_schema = %s"
                 "   and table_name = %s",
-                (cfg['siteid'], table))
+                (cfg['dbname'], table))
     return fetch() is not None
 
 
@@ -164,7 +172,7 @@ def mysql_column_exists(table, column):
                 " where table_schema = %s"
                 "   and table_name = %s"
                 "   and column_name = %s",
-                (cfg['siteid'], table, column))
+                (cfg['dbname'], table, column))
     return fetch() is not None
 
 
@@ -280,7 +288,7 @@ def daily_backup():
 
     if cfg["db"] == "mysql":
         cmd = ("mysqldump --single-transaction --result-file {}/{} {}"
-               .format(backups_dir, basename, cfg['siteid']))
+               .format(backups_dir, basename, cfg['dbname']))
         if os.system(cmd) != 0:
             print("db dump error")
             sys.exit(1)
@@ -297,7 +305,7 @@ def daily_backup():
                " --no-acl"
                " --compress=6"
                " --lock-wait-timeout=60000").format(
-                   cfg['siteid'],
+                   cfg['dbname'],
                    backups_dir,
                    gzname)
         if os.system(cmd) != 0:
@@ -320,11 +328,11 @@ def restore():
         sys.exit(1)
     filename = sys.argv[2]
 
-    cmd = "mysql -Nrse 'drop database `{}`'".format(cfg['siteid'])
+    cmd = "mysql -Nrse 'drop database `{}`'".format(cfg['dbname'])
     print(cmd)
 
-    cmd = "mysql -Nrse 'create database `{}`'".format(cfg['siteid'])
+    cmd = "mysql -Nrse 'create database `{}`'".format(cfg['dbname'])
     print(cmd)
 
-    cmd = "gunzip < {} | mysql {}".format(filename, cfg['siteid'])
+    cmd = "gunzip < {} | mysql {}".format(filename, cfg['dbname'])
     print(cmd)

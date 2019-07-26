@@ -6,6 +6,25 @@ $app_root = @$_SERVER['APP_ROOT'];
 $cfg = json_decode (file_get_contents ($app_root . "/cfg.json"), TRUE);
 $options = json_decode (file_get_contents ($app_root . "/options.json"), TRUE);
 
+function get_option($name, $default_val = "") {
+    global $cfg, $options;
+
+    $server_name = gethostname();
+    $options_server = @$options[$server_name];
+    $options_site = @$options[$cfg['siteid']];
+    
+    if (isset ($options_site[$name]))
+        return ($options_site[$name]);
+
+    if (isset ($options_server[$name]))
+        return ($options_server[$name]);
+
+    if (isset ($options[$name]))
+        return ($options[$name]);
+
+    return ($default_val);
+}
+
 function make_db_connection ($db, $dbparams, $create) {
 	global $default_dbparams, $cfg, $options;
 
@@ -32,9 +51,17 @@ function make_db_connection ($db, $dbparams, $create) {
                 }
             } else if ($options['db'] == "mysql") {
                 $default_dbparams['dbtype'] = "mysql";
-                $default_dbparams['host'] = '';
-                $default_dbparams['user'] = $pw['name'];
-                $default_dbparams['password'] = '';
+
+                if (($db_host = get_option("db_host")) != "") {
+                    $default_dbparams['host'] = $db_host;
+                    $default_dbparams['user'] = get_option("db_user");
+                    $default_dbparams['password'] 
+                        = trim(file_get_contents(".psite_db_passwd"));
+                } else {
+                    $default_dbparams['host'] = '';
+                    $default_dbparams['user'] = $pw['name'];
+                    $default_dbparams['password'] = '';
+                }
             } else if ($options['db'] == "sqlite3") {
                 $default_dbparams['dbtype'] = "sqlite3";
             }
@@ -66,7 +93,7 @@ function make_db_connection ($db, $dbparams, $create) {
             $db->pdo->exec ("set session time_zone = '+00:00'");
             $db->pdo->exec (sprintf ("use `%s`", $db->dbname));
         } else if ($dbparams['dbtype'] == "sqlite3") {
-            $name = sprintf ("%s/%s.db", $cfg['aux_dir'], $cfg['siteid']);
+            $name = sprintf ("%s/%s.db", $cfg['aux_dir'], $cfg['dbname']);
             if (! file_exists ($name)) {
                 printf ("%s does not exist", $name);
                 exit();
@@ -89,12 +116,11 @@ function get_db ($dbname = "", $dbparams = NULL, $create = 0) {
 	global $cfg, $db_connections, $default_db;
 
 	if ($dbname == "") {
-		if (! isset ($cfg['siteid'])) {
-			printf ("get_db: no siteid"
-				." to identify default database\n");
+		if (! isset ($cfg['dbname'])) {
+			printf ("get_db: missing dbname\n");
 			exit (1);
 		}
-		$dbname = $cfg['siteid'];
+		$dbname = $cfg['dbname'];
 	}
 
 	if (($db = @$db_connections[$dbname]) != NULL)
