@@ -162,6 +162,11 @@ def make_apache_conf():
 def setup_apache():
     cfg = psite.get_cfg()
 
+    www_dir = "/var/www/{}".format(cfg['siteid'])
+    if not os.path.exists(www_dir):
+        print("sudo ln -sf {} {}".format(cfg['static_dir'], www_dir))
+    cfg['www_dir'] = www_dir
+
     conf = make_apache_conf()
     with open("TMP.conf", "w") as outf:
         outf.write(conf)
@@ -200,13 +205,17 @@ def setup_dirs():
     cfg['psite_dir'] = os.path.dirname(__file__)
     cfg['src_dir'] = os.getcwd()
     cfg['static_dir'] = "{}/static".format(cfg['src_dir'])
-    cfg['www_dir'] = "/var/www/{}".format(cfg['siteid'])
-    cfg['aux_dir'] = "/var/{}".format(cfg['siteid'])
-    if not os.path.exists(cfg['www_dir']):
-        print("sudo ln -sf {} {}".format(cfg['static_dir'], cfg['www_dir']))
-        if not os.path.exists(cfg['aux_dir']):
-            print("sudo sh -c 'mkdir -pm2775 {0}; chown www-data.www-data {0}"
-                  .format(cfg['aux_dir']))
+
+    aux_dir = psite.get_option("aux_dir")
+    if aux_dir is None:
+        aux_dir = "/var/{}".format(cfg['siteid'])
+        if not os.path.exists(aux_dir):
+            print("sudo sh -c 'mkdir -pm2775 {0};chown www-data.www-data {0}"
+                  .format(aux_dir))
+    else:
+        if not os.path.exists(aux_dir):
+            print("mkdir -pm777 {}".format(aux_dir))
+    cfg['aux_dir'] = aux_dir
 
 
 def setup_name_and_ports():
@@ -291,7 +300,9 @@ def install(site_name_arg=None, conf_key_arg=None):
 
     setup_dirs()
     setup_urls()
-    setup_apache()
+    if psite.get_option("skip_apache", 0) == 0:
+        setup_apache()
+
     setup_cron()
 
     print(cfg['plain_url'])
