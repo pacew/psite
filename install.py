@@ -18,7 +18,7 @@ def make_url(scheme, host, port):
     if port != 80 and port != 443:
         url += ":{}".format(port)
         url += "/"
-        return url
+    return url
 
 
 def make_cert_filenames(dns_name):
@@ -212,23 +212,24 @@ def setup_dirs():
 def setup_name_and_ports():
     cfg = psite.get_cfg()
 
-    nat_info = re.split("\\s+", psite.slurp_file("/etc/apache2/NAT_INFO"))
-    if len(nat_info) >= 2:
-        cfg['nat_name'] = nat_info[0]
-        cfg['port_base'] = int(nat_info[1])
-    else:
-        cfg['nat_name'] = "localhost"
-        cfg['port_base'] = 8000
-
     val = psite.get_option("external_name")
-    if val is None:
-        cfg['external_name'] = cfg['nat_name']
-        if 'plain_port' not in cfg:
-            cfg['plain_port'] = get_free_port()
-    else:
+    if val is not None:
         cfg['external_name'] = val
         cfg['plain_port'] = 80
         cfg['ssl_port'] = 443
+
+    else:
+        nat_info = re.split("\\s+", psite.slurp_file("/etc/apache2/NAT_INFO"))
+        if len(nat_info) >= 2:
+            cfg['nat_name'] = nat_info[0]
+            cfg['port_base'] = int(nat_info[1])
+        else:
+            cfg['nat_name'] = "localhost"
+            cfg['port_base'] = 8000
+
+        cfg['external_name'] = cfg['nat_name']
+        if 'plain_port' not in cfg:
+            cfg['plain_port'] = get_free_port()
 
 
 def setup_urls():

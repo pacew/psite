@@ -14,7 +14,10 @@ cmds = []
 def usage():
     print("usage: psite cmd")
     for elt in cmds:
-        print("  psite", elt[0])
+        args = ""
+        if len(elt) >= 3:
+            args = elt[2]
+        print("  psite", elt[0], args)
     sys.exit(1)
     
 
@@ -26,7 +29,7 @@ def cmd_install():
     if len(sys.argv) >= 4:
         conf_key = sys.argv[3]
     psite.install(site_name, conf_key)
-cmds.append(["install", cmd_install])
+cmds.append(["install", cmd_install, "[sitename [confkey]]"])
 
 def cmd_getvar():
     if (len(sys.argv) != 3):
