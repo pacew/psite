@@ -4,10 +4,6 @@ import re
 import grp
 import time
 
-# apt-get install python3-psycopg2 python3-pymysql
-import psycopg2
-import sqlite3
-import pymysql
 
 import psite
 
@@ -38,6 +34,7 @@ def get_db():
     db = dict(db=cfg["db"])
 
     if cfg["db"] == "sqlite3":
+        import sqlite3
         filename = "{}/{}.db".format(cfg['aux_dir'], cfg['dbname'])
         db['conn'] = sqlite3.connect(filename)
         make_writable_for_server(filename)
@@ -47,6 +44,8 @@ def get_db():
         db['commit'] = sqlite3_commit
         return db
     elif cfg["db"] == "postgres":
+        # apt-get install python3-psycopg2
+        import psycopg2
         dsn = "postgresql://apache@/{}".format(cfg['dbname'])
         try:
             db['conn'] = psycopg2.connect(dsn)
@@ -61,9 +60,13 @@ def get_db():
         db['commit'] = postgres_commit
         return db
     elif cfg["db"] == "mysql":
+        # apt-get install python3-mysqldb
+        import MySQLdb
+
         try:
             params = {}
             params['db'] = cfg['dbname']
+            params['db'] = 'apply-pace'
 
             if psite.get_option("db_host") is not None:
                 params['host'] = psite.get_option("db_host")
@@ -74,8 +77,8 @@ def get_db():
                 # get unix_socket name: mysqladmin variables | grep sock
                 params['unix_socket'] = '/var/run/mysqld/mysqld.sock'
 
-            db['conn'] = pymysql.connect(**params)
-        except(pymysql.err.OperationalError, pymysql.err.InternalError):
+            db['conn'] = MySQLdb.connect(**params)
+        except(MySQLdb.OperationalError):
             print("")
             print("*******")
             print("can't connect to database, maybe do:")
@@ -85,6 +88,7 @@ def get_db():
             print("")
             raise
             sys.exit(1)
+
         db['cursor'] = db['conn'].cursor()
         db['table_exists'] = mysql_table_exists
         db['column_exists'] = mysql_column_exists

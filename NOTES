@@ -1,3 +1,5 @@
+ln -s `pwd`/psite ~/bin/psite
+
 psite install
 
 /var/www/SITEID gets linked to ./static
