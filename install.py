@@ -166,11 +166,11 @@ def make_apache_conf():
 def setup_apache():
     cfg = psite.get_cfg()
 
-    if psite.get_option("flat", 0) == 0: 
+    if psite.get_option("flat", 0) == 0:
         cfg['document_root'] = "{}/static".format(cfg['src_dir'])
     else:
         cfg['document_root'] = cfg['src_dir']
-        
+
     conf = make_apache_conf()
     with open("TMP.conf", "w") as outf:
         outf.write(conf)
@@ -294,10 +294,11 @@ def setup_cron():
 
 def setup_htaccess():
     cfg = psite.get_cfg()
-    
+
     with open(".htaccess", "w") as outf:
         outf.write("SetEnv PSITE_PHP {}/psite.php\n".format(cfg['psite_dir']))
         outf.write("SetEnv APP_ROOT {}\n".format(cfg['src_dir']))
+
 
 def install(site_name_arg=None, conf_key_arg=None):
     cfg = psite.get_cfg()
