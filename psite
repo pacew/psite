@@ -53,6 +53,16 @@ def cmd_db_password():
         outf.write(pw)
         outf.write("\n")
 
+    print("also need:")
+    print(("mysql_config_editor set"
+           " --login-path={}"
+           " --host={}"
+           " --user={}"
+           "--password").format(cfg['siteid'], 
+                                psite.get_option("db_host"),
+                                psite.get_option("db_use")))
+
+
 cmds.append(["db_password", cmd_db_password])
 
 cmds.append(["mkschema", psite.mkschema])

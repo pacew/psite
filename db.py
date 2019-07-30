@@ -292,8 +292,11 @@ def daily_backup():
     gzname = "{}.gz".format(basename)
 
     if cfg["db"] == "mysql":
-        cmd = ("mysqldump --single-transaction --result-file {}/{} {}"
-               .format(backups_dir, basename, cfg['dbname']))
+        cmd = ("mysqldump"
+               " --single-transaction"
+               " --add-drop-table"
+               " --result-file {}/{} {}"
+        ).format(backups_dir, basename, cfg['dbname'])
         if os.system(cmd) != 0:
             print("db dump error")
             sys.exit(1)
@@ -322,6 +325,7 @@ def daily_backup():
         os.remove(latest)
 
     os.symlink(gzname, latest)
+    print(latest)
 
 
 def restore():
@@ -333,11 +337,12 @@ def restore():
         sys.exit(1)
     filename = sys.argv[2]
 
-    cmd = "mysql -Nrse 'drop database `{}`'".format(cfg['dbname'])
+    auth = ""
+    if psite.get_option("db_host") is not None:
+        auth = " --login-path={}".format(cfg[siteid])
+
+    cmd = "mysql {} -Nrse 'create database `{}`'".format(auth, cfg['dbname'])
     print(cmd)
 
-    cmd = "mysql -Nrse 'create database `{}`'".format(cfg['dbname'])
-    print(cmd)
-
-    cmd = "gunzip < {} | mysql {}".format(filename, cfg['dbname'])
+    cmd = "gunzip < {} | mysql {} {}".format(filename, auth, cfg['dbname'])
     print(cmd)
