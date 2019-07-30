@@ -196,10 +196,11 @@ def setup_siteid(site_name_arg, conf_key_arg):
         else:
             cfg['site_name'] = site_name_arg
 
-    if conf_key_arg is None:
-        cfg['conf_key'] = getpass.getuser()
-    else:
-        cfg['conf_key'] = conf_key_arg
+    if 'conf_key' not in cfg:
+        if conf_key_arg is None:
+            cfg['conf_key'] = getpass.getuser()
+        else:
+            cfg['conf_key'] = conf_key_arg
 
     cfg['siteid'] = "{}-{}".format(cfg['site_name'], cfg['conf_key'])
 
