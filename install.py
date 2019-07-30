@@ -110,10 +110,11 @@ def add_rewrites(ssl_flag):
     conf += "  RewriteRule ^/(.*) {}$1 [R]\n".format(cfg['main_url'])
     conf += "\n"
 
-    # send all non-static files to app.php
-    conf += ("  RewriteCond {}%{{REQUEST_FILENAME}} !-f\n"
-             .format(cfg['www_dir']))
-    conf += "  RewriteRule .* {}/app.php\n".format(cfg['src_dir'])
+    if psite.get_option("flat", 0) == 0:
+        # send all non-static files to app.php
+        conf += ("  RewriteCond {}%{{REQUEST_FILENAME}} !-f\n"
+                 .format(cfg['document_root']))
+        conf += "  RewriteRule .* {}/app.php\n".format(cfg['src_dir'])
 
     return conf
 
@@ -129,15 +130,18 @@ def make_virtual_host(ssl_flag, port):
     if (ssl_flag):
         conf += add_ssl_engine()
     conf += "  php_flag display_errors on\n"
-    conf += "  DocumentRoot {}\n".format(cfg['www_dir'])
+    conf += "  DocumentRoot {}\n".format(cfg['document_root'])
     conf += "  SetEnv APP_ROOT {}\n".format(cfg['src_dir'])
     conf += "  SetEnv PSITE_DIR {}\n".format(cfg['psite_dir'])
     conf += "  SetEnv PSITE_PHP {}/psite.php\n".format(cfg['psite_dir'])
-    conf += "  <Directory {}>\n".format(cfg['www_dir'])
+    conf += "  <Directory {}>\n".format(cfg['document_root'])
     conf += add_valhtml()
     conf += add_nocache()
     conf += "  </Directory>\n"
-    conf += "  DirectoryIndex disabled\n"
+    if psite.get_option("flat", 0) == 0:
+        conf += "  DirectoryIndex disabled\n"
+    else:
+        conf += "  DirectoryIndex index.php\n"
     conf += add_rewrites(ssl_flag)
     conf += "</VirtualHost>\n"
     return conf
@@ -162,11 +166,11 @@ def make_apache_conf():
 def setup_apache():
     cfg = psite.get_cfg()
 
-    www_dir = "/var/www/{}".format(cfg['siteid'])
-    if not os.path.exists(www_dir):
-        print("sudo ln -sf {} {}".format(cfg['static_dir'], www_dir))
-    cfg['www_dir'] = www_dir
-
+    if psite.get_option("flat", 0) == 0: 
+        cfg['document_root'] = "{}/static".format(cfg['src_dir'])
+    else:
+        cfg['document_root'] = cfg['src_dir']
+        
     conf = make_apache_conf()
     with open("TMP.conf", "w") as outf:
         outf.write(conf)
@@ -204,7 +208,6 @@ def setup_dirs():
     cfg = psite.get_cfg()
     cfg['psite_dir'] = os.path.dirname(__file__)
     cfg['src_dir'] = os.getcwd()
-    cfg['static_dir'] = "{}/static".format(cfg['src_dir'])
 
     aux_dir = psite.get_option("aux_dir")
     if aux_dir is None:

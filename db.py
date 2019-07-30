@@ -71,7 +71,8 @@ def get_db():
             if psite.get_option("db_host") is not None:
                 params['host'] = psite.get_option("db_host")
                 params['user'] = psite.get_option("db_user")
-                pw = psite.slurp_file(".psite_db_passwd").strip()
+                file = "{}/psite_db_passwd".format(cfg['aux_dir'])
+                pw = psite.slurp_file(file).strip()
                 params['password'] = pw
             else:
                 # get unix_socket name: mysqladmin variables | grep sock

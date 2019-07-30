@@ -47,7 +47,9 @@ cmds.append(["setvar", cmd_setvar])
 
 def cmd_db_password():
     pw = getpass.getpass()
-    with open(".psite_db_passwd", "w") as outf:
+    cfg = psite.get_cfg()
+    file = "{}/psite_db_passwd".format(cfg['aux_dir'])
+    with open(file, "w") as outf:
         outf.write(pw)
         outf.write("\n")
 
