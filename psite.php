@@ -11,7 +11,7 @@ function get_option($name, $default_val = "") {
 
     $server_name = gethostname();
     $options_server = @$options[$server_name];
-    $options_site = @$options[$cfg['siteid']];
+    $options_site = @$options_server[$cfg['siteid']];
     
     if (isset ($options_site[$name]))
         return ($options_site[$name]);
