@@ -295,8 +295,9 @@ def daily_backup():
         cmd = ("mysqldump"
                " --single-transaction"
                " --add-drop-table"
-               " --result-file {}/{} {}"
-        ).format(backups_dir, basename, cfg['dbname'])
+               " --result-file {}/{} {}").format(backups_dir,
+                                                 basename,
+                                                 cfg['dbname'])
         if os.system(cmd) != 0:
             print("db dump error")
             sys.exit(1)
@@ -339,7 +340,7 @@ def restore():
 
     auth = ""
     if psite.get_option("db_host") is not None:
-        auth = " --login-path={}".format(cfg[siteid])
+        auth = " --login-path={}".format(cfg['siteid'])
 
     cmd = "mysql {} -Nrse 'create database `{}`'".format(auth, cfg['dbname'])
     print(cmd)
