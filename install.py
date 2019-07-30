@@ -292,6 +292,13 @@ def setup_cron():
         outf.write(cron)
 
 
+def setup_htaccess():
+    cfg = psite.get_cfg()
+    
+    with open(".htaccess", "w") as outf:
+        outf.write("SetEnv PSITE_PHP {}/psite.php\n".format(cfg['psite_dir']))
+        outf.write("SetEnv APP_ROOT {}\n".format(cfg['src_dir']))
+
 def install(site_name_arg=None, conf_key_arg=None):
     cfg = psite.get_cfg()
     setup_siteid(site_name_arg, conf_key_arg)
@@ -306,6 +313,8 @@ def install(site_name_arg=None, conf_key_arg=None):
     setup_urls()
     if psite.get_option("skip_apache", 0) == 0:
         setup_apache()
+    else:
+        setup_htaccess()
 
     setup_cron()
 
