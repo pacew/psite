@@ -5,7 +5,7 @@ from html.parser import HTMLParser
 
 from install import install  # noqa: F401
 from db import (mkschema, query, fetch, get_seq, commit,  # noqa: F401
-                getvar, setvar, daily_backup, restore)
+                getvar, setvar, do_backup, restore)
 
 
 def read_json(name, default=None):

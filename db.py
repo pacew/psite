@@ -236,6 +236,8 @@ def make_column(table, column, coltype):
         db['cursor'].execute(stmt)
     elif not column_exists(table, column):
         stmt = "alter table {} add {} {}".format(table, column, coltype)
+        if db['db'] == "mysql" and coltype == "timestamp":
+            stmt += " null"; 
         print(stmt)
         db['cursor'].execute(stmt)
 
@@ -280,7 +282,7 @@ def mkschema():
                 commit()
 
 
-def daily_backup():
+def do_backup():
     cfg = psite.get_cfg()
 
     backups_dir = "{}/backups".format(cfg['aux_dir'])

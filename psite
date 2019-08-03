@@ -66,7 +66,7 @@ def cmd_db_password():
 cmds.append(["db_password", cmd_db_password])
 
 cmds.append(["mkschema", psite.mkschema])
-cmds.append(["daily_backup", psite.daily_backup])
+cmds.append(["backup", psite.do_backup])
 cmds.append(["restore", psite.restore])
 
 if len(sys.argv) < 2:
