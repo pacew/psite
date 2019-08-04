@@ -362,6 +362,20 @@ function getvar ($name) {
     return ("");
 }
 
+function setvar ($name, $val) {
+    $q = query ("select 0"
+        ." from vars"
+        ." where var = ?",
+        $name);
+    if (fetch ($q) == NULL) {
+        query ("insert into vars (var, val) values (?,?)", 
+               array ($name, $val));
+    } else {
+        query ("update vars set val = ? where var = ?",
+               array ($val, $name));
+    }
+}
+
 function get_seq ($db = NULL) {
 	$q = query_db ($db,
 		       "select lastval"
