@@ -267,8 +267,14 @@ def setup_urls():
 def setup_ssl():
     cfg = psite.get_cfg()
 
-    if psite.get_option("ssl", "") == "no":
-        cfg['ssl_enabled'] = False
+    ssl_port = psite.get_option("ssl_port", "")
+    if ssl_port != "":
+        ssl_port = int(ssl_port)
+        if ssl_port == 0:
+            cfg['ssl_enabled'] = False
+        else:
+            cfg['ssl_enabled'] = True
+            cfg['ssl_port'] = ssl_port
         return
 
     if not find_certs():

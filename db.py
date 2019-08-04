@@ -237,7 +237,7 @@ def make_column(table, column, coltype):
     elif not column_exists(table, column):
         stmt = "alter table {} add {} {}".format(table, column, coltype)
         if db['db'] == "mysql" and coltype == "timestamp":
-            stmt += " null"; 
+            stmt += " null"
         print(stmt)
         db['cursor'].execute(stmt)
 
