@@ -292,7 +292,7 @@ def setup_cron():
     hour = random.randrange(3, 6)
     minute = random.randrange(0, 60)
     cron = ("# created by: psite install\n"
-            "{} {} * * * cd {} && {}/psite daily-backup\n"
+            "{} {} * * * cd {} && {}/psite backup-and-push\n"
             ).format(minute, hour, cfg['src_dir'], cfg['psite_dir'])
     with open("TMP.crontab", "w") as outf:
         outf.write(cron)

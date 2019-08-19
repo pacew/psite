@@ -9,3 +9,13 @@ any url request not satisfied by ./static is sent to index.php
 https://packaging.python.org/tutorials/packaging-projects/
 
 apt-get install python3-flake8
+
+
+================================================================
+s3 setup
+
+create bucket with unique name
+create policy allowing only PutObject and ListObject for the bucket
+create user with name like apply-pace and apply the policy
+
+

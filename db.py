@@ -211,11 +211,12 @@ def getvar(name):
 
 
 def setvar(name, val):
-    query("select val from vars where name = ?", (name,))
+    query("select val from vars where var = ?", (name,))
     if fetch() is None:
-        query("insert into vars (name, val) values (?, ?)", (name, val))
+        query("insert into vars (var, val) values (?, ?)", (name, val))
     else:
-        query("update vars set val = ? where name = ?", (val, name))
+        query("update vars set val = ? where var = ?", (val, name))
+    commit()
 
 
 def table_exists(table):
