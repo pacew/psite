@@ -214,7 +214,7 @@ def setup_dirs():
     if aux_dir is None:
         aux_dir = "/var/{}".format(cfg['siteid'])
         if not os.path.exists(aux_dir):
-            print("sudo sh -c 'mkdir -pm2775 {0};chown www-data.www-data {0}"
+            print("sudo sh -c 'mkdir -pm2775 {0};chown www-data.www-data {0}'"
                   .format(aux_dir))
     else:
         if not os.path.exists(aux_dir):

@@ -698,6 +698,7 @@ function make_option ($val, $curval, $desc)
 	$body .= "</option>\n";
 }
 
+/* usage: require_once(router()); at end of app.php */
 function router () {
     $script_name = preg_replace ("|^/|", "", $_SERVER['SCRIPT_NAME']);
 
