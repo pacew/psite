@@ -326,7 +326,9 @@ function psite_session () {
 
 function getsess ($name) {
     global $cfg;
-	$key = sprintf ("svar%d_%s", $cfg['ssl_port'], $name);
+    if (($port = @$cfg['ssl_port']) == 0)
+        $port = $cfg['plain_port'];
+	$key = sprintf ("svar%d_%s", $port, $name);
 	if (isset ($_SESSION[$key]))
 		return ($_SESSION[$key]);
 	return (NULL);
