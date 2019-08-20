@@ -28,9 +28,9 @@ def s3_setup():
     print("  don't add to a group")
     print("  tag siteid to " + cfg['siteid'])
     print("  display the access key and store with")
-    print("    aws set {}.aws_access_key_id KEY_ID".format(
+    print("aws --profile {} configure set aws_access_key_id KEY_ID".format(
         cfg['siteid']))
-    print("    aws set {}.aws_secret_access_key SECRET".format(
+    print("aws --profile {} configure set aws_secret_access_key SECRET".format(
         cfg['siteid']))
 
     print("  attach the policy named " + user_name)
