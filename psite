@@ -58,9 +58,9 @@ def cmd_db_password():
            " --login-path={}"
            " --host={}"
            " --user={}"
-           "--password").format(cfg['siteid'], 
-                                psite.get_option("db_host"),
-                                psite.get_option("db_use")))
+           " --password").format(cfg['siteid'], 
+                                 psite.get_option("db_host"),
+                                 psite.get_option("db_user")))
 
 
 cmds.append(["db_password", cmd_db_password])

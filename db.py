@@ -3,6 +3,7 @@ import sys
 import re
 import grp
 import time
+import subprocess
 
 
 import psite
@@ -294,13 +295,19 @@ def do_backup():
     gzname = "{}.gz".format(basename)
 
     if cfg["db"] == "mysql":
-        cmd = ("mysqldump"
-               " --single-transaction"
-               " --add-drop-table"
-               " --result-file {}/{} {}").format(backups_dir,
-                                                 basename,
-                                                 cfg['dbname'])
-        if os.system(cmd) != 0:
+        cmd = []
+        cmd.append("mysqldump")
+        if psite.get_option("db_host") is not None:
+            cmd.append("--login-path={}".format(cfg['siteid']))
+            
+        cmd.append("--single-transaction")
+        cmd.append("--add-drop-table")
+        cmd.append("--result-file")
+        cmd.append("{}/{}".format(backups_dir, basename))
+        cmd.append(cfg['dbname'])
+        
+        print(" ".join(cmd))
+        if subprocess.call(cmd) != 0:
             print("db dump error")
             sys.exit(1)
 
