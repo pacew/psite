@@ -66,7 +66,6 @@ def get_db():
         try:
             params = {}
             params['db'] = cfg['dbname']
-            params['db'] = 'apply-pace'
 
             if psite.get_option("db_host") is not None:
                 params['host'] = psite.get_option("db_host")
