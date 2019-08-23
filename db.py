@@ -299,13 +299,13 @@ def do_backup():
         cmd.append("mysqldump")
         if psite.get_option("db_host") is not None:
             cmd.append("--login-path={}".format(cfg['siteid']))
-            
+
         cmd.append("--single-transaction")
         cmd.append("--add-drop-table")
         cmd.append("--result-file")
         cmd.append("{}/{}".format(backups_dir, basename))
         cmd.append(cfg['dbname'])
-        
+
         print(" ".join(cmd))
         if subprocess.call(cmd) != 0:
             print("db dump error")

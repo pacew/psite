@@ -1,6 +1,7 @@
 import psite
 import hashlib
-import subprocess
+import os
+import sys
 
 
 def s3_backup_bucket_name():
@@ -44,13 +45,9 @@ def s3_sync():
     local_dir = "{}/backups".format(cfg['aux_dir'])
     bucket_name = s3_backup_bucket_name()
 
-    cmd = []
-    cmd.append("aws")
-    cmd.append("--profile")
-    cmd.append(cfg['siteid'])
-    cmd.append("s3")
-    cmd.append("sync")
-    cmd.append(local_dir)
-    cmd.append("s3://"+bucket_name)
-    print(" ".join(cmd))
-    subprocess.call(cmd)
+    cmd = "aws --profile {} s3 sync {} s3://{}".format(
+        cfg['siteid'], local_dir, bucket_name)
+    print(cmd)
+    if os.system(cmd) != 0:
+        print("aws s3 sync error")
+        sys.exit(1)
