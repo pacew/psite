@@ -71,12 +71,11 @@ cmds.append(["s3-sync", psite.s3_sync])
 cmds.append(["backup", psite.do_backup])
 cmds.append(["restore", psite.restore])
 
-def cmd_backup_and_push():
+def cmd_do_cron():
     psite.do_backup()
-    cmd = psite.s3_sync()
-    print(cmd)
+    psite.s3_sync()
     
-cmds.append(["backup-and-push", cmd_backup_and_push])
+cmds.append(["do-cron", cmd_do_cron])
 
 if len(sys.argv) < 2:
     usage()
