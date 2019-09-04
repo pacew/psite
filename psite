@@ -71,6 +71,7 @@ cmds.append(["s3-setup", psite.s3_setup])
 cmds.append(["s3-sync", psite.s3_sync])
 cmds.append(["backup", psite.do_backup])
 cmds.append(["restore", psite.restore])
+cmds.append(["get-latest", psite.s3_get_latest])
 
 def cmd_do_cron():
     psite.do_backup()

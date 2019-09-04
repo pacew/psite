@@ -7,7 +7,7 @@ from install import install  # noqa: F401
 from db import (mkschema, query, fetch, get_seq, commit,  # noqa: F401
                 getvar, setvar, do_backup, restore, cmd_sql)
 
-from aws import (s3_setup, s3_sync)  # noqa: F401
+from aws import (s3_setup, s3_sync, s3_get_latest)  # noqa: F401
 
 
 def read_json(name, default=None):
