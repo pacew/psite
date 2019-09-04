@@ -356,3 +356,17 @@ def restore():
 
     cmd = "gunzip < {} | mysql {} {}".format(filename, auth, cfg['dbname'])
     print(cmd)
+
+
+def cmd_sql():
+    cfg = psite.get_cfg()
+
+    if cfg["db"] == "mysql":
+        cmd = []
+        cmd.append("mysql")
+        if psite.get_option("db_host") is not None:
+            cmd.append("--login-path={}".format(cfg['siteid']))
+        cmd.append(cfg['dbname'])
+
+        print(" ".join(cmd))
+    
