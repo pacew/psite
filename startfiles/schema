@@ -1,0 +1,11 @@
+table seq
+col lastval integer
+
+table sessions
+col session_id text
+col updated timestamp
+col session text
+
+table vars
+col var text
+col val text
