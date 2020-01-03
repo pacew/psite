@@ -51,7 +51,6 @@ def find_certs():
         return True
 
     wname = "wildcard." + cfg['external_name']
-    print(wname)
     if try_cert(wname):
         return True
 
