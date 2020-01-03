@@ -1,0 +1,128 @@
+.xdebug-error {
+    font-size: 16px !important;
+    width: 95% !important;
+    margin: 0 auto 10px auto !important;
+    border-color: #666 !important;
+    background: #ddd !important;
+}
+
+.xdebug-error th, .xdebug-error td {
+    padding: 2px !important;
+}
+
+.xdebug-error th {
+    background: #ccc !important;
+}
+
+.xdebug-error_description th {
+    font-size: 1.2em !important;
+    padding: 20px 4px 20px 100px !important;
+    background: #ccc no-repeat left top !important;
+}
+
+.xdebug-error_callStack th {
+    background: #666 !important;
+    color: #ddd !important;
+}
+
+.flash {
+    background: #fcc;
+    margin: 1em 2em;
+    padding: .5em;
+    border: 2px solid #a33;
+    color: #a33;
+}
+
+
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+
+.boxed {
+    margin: .25em;
+    border:2px solid #ddd;
+}
+
+.boxed th {
+    text-align: left;
+    background-color: hsl(220, 100%, 70%);
+    color: white;
+    white-space: nowrap;
+}
+
+.boxed tr.even {
+  background-color: hsl(220, 100%, 92%);
+}
+
+.boxed th, .boxed td {
+    padding:4px 10px;
+    border:2px solid #ddd;
+    border-width:0 2px 2px 0;
+}
+
+.boxed tr:hover {
+  background-color: hsl(220, 100%, 80%) !important;
+}
+
+.twocol {
+    border: 1px solid gray;
+    margin: .25em;
+    padding: .25em;
+}
+
+.twocol th {
+    text-align: left;
+    padding: 0 .5em 0 0;
+    vertical-align: top;
+}
+
+form .twocol {
+    border-collapse:separate;
+    border-spacing: 0 10px;
+}
+
+h1 {
+    font-weight: bold;
+    font-size: 1.5em;
+}
+
+h2 {
+    margin-top: 1em;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+p {
+    margin: 1em 0;
+}
+
+.debug {
+    display: none;
+    border: 1px solid #eaa;
+    background: #fee;
+    padding: 0 .2em;
+}
+
+.debug_box {
+    background: #fee;
+    border: 1px solid #eaa;
+    margin: .2em 0;
+    padding: .5em;
+}
+
+#generation_time {
+    position:absolute;
+    top: 0;
+    left: 0;
+    background: #faa;
+    padding: 2px;
+    border: 2px solid #844;
+}
+
+
+
