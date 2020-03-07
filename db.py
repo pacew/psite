@@ -347,15 +347,23 @@ def restore():
         sys.exit(1)
     filename = sys.argv[2]
 
-    auth = ""
-    if psite.get_option("db_host") is not None:
-        auth = " --login-path={}".format(cfg['siteid'])
+    if cfg["db"] == "mysql":
+        auth = ""
+        if psite.get_option("db_host") is not None:
+            auth = " --login-path={}".format(cfg['siteid'])
 
-    cmd = "mysql {} -Nrse 'create database `{}`'".format(auth, cfg['dbname'])
-    print(cmd)
+        cmd = "mysql {} -Nrse 'create database `{}`'".format(auth, 
+                                                             cfg['dbname'])
+        print(cmd)
 
-    cmd = "gunzip < {} | mysql {} {}".format(filename, auth, cfg['dbname'])
-    print(cmd)
+        cmd = "gunzip < {} | mysql {} {}".format(filename, auth, cfg['dbname'])
+        print(cmd)
+    elif cfg["db"] == "postgres":
+        cmd = "createdb -O apache {}".format(cfg['dbname'])
+        print(cmd)
+        cmd = "psql -U apache {} < {}".format(cfg['dbname'], filename)
+        print(cmd)
+        
 
 
 def cmd_sql():

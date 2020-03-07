@@ -336,3 +336,5 @@ def install(site_name_arg=None, conf_key_arg=None):
     print(cfg['local_url'])
 
     psite.write_json("cfg.json", cfg)
+
+
