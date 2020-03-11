@@ -105,7 +105,7 @@ function make_db_connection ($db, $dbparams, $create) {
         }
 	} catch (Exception $e) {
 		printf ("db connect error %s\n", $e->getMessage ());
-		return (NULL);
+        exit();
 	}
 }
 
