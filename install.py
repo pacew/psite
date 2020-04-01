@@ -248,6 +248,9 @@ def setup_name_and_ports():
         if 'plain_port' not in cfg:
             cfg['plain_port'] = get_free_port()
 
+    if 'wss_port' not in cfg:
+        cfg['wss_port'] = get_free_port()
+
 
 def setup_urls():
     cfg = psite.get_cfg()
