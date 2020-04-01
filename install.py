@@ -310,6 +310,34 @@ def setup_cron():
     with open("TMP.crontab", "w") as outf:
         outf.write(cron)
 
+def setup_daemon():
+    cfg = psite.get_cfg()
+    dprog = psite.get_option("daemon")
+    if dprog is None:
+        reutn
+    dname = re.sub(r'[.].*$', '', dprog)
+    service_name = "{}.service".format(dname)
+
+    unit = ""
+    unit += "[Unit]\n"
+    unit += "Description={}\n".format(dprog)
+    unit += "\n"
+    unit += "[Service]\n"
+    unit += "Type=simple\n"
+    unit += "ExecStart={}/{} start\n".format(cfg['src_dir'], dprog)
+    unit += "User=pace\n"
+    unit += "WorkingDirectory={}".format(cfg['src_dir'])
+    unit += "\n"
+    unit += "[Install]\n"
+    unit += "WantedBy=multi-user.target\n"
+
+    with open("TMP.service", "w") as outf:
+        outf.write(unit)
+
+    uname = "/etc/systemd/system/{}".format(service_name)
+    old = psite.slurp_file(uname)
+    if old != unit:
+        print("sudo sh -c 'cp TMP.service {} && systemctl daemon-reload'".format(uname))
 
 def setup_htaccess():
     cfg = psite.get_cfg()
@@ -337,6 +365,7 @@ def install(site_name_arg=None, conf_key_arg=None):
         setup_htaccess()
 
     setup_cron()
+    setup_daemon()
 
     print(cfg['plain_url'])
     if cfg['ssl_url'] != "":
