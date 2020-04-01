@@ -54,7 +54,7 @@ def find_certs():
     if try_cert(wname):
         return True
 
-    wname = re.sub("^[^.]", "wildcard", cfg['external_name'])
+    wname = re.sub("^[^.]*", "wildcard", cfg['external_name'])
     if try_cert(wname):
         return True
 
