@@ -268,6 +268,10 @@ def setup_urls():
         cfg['ssl_url'] = ""
         cfg['main_url'] = cfg['plain_url']
 
+    cfg['wss_url'] = make_url("wss",
+                              cfg['external_name'],
+                              cfg['wss_port']);
+
     cfg['local_url'] = re.sub(r'/[-_a-z0-9]+', "/local", cfg['main_url'])
 
 
