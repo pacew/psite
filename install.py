@@ -234,6 +234,7 @@ def setup_name_and_ports():
         cfg['external_name'] = val
         cfg['plain_port'] = 80
         cfg['ssl_port'] = 443
+        cfg['port_base'] = 8000
 
     else:
         nat_info = re.split("\\s+", psite.slurp_file("/etc/apache2/NAT_INFO"))
