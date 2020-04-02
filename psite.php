@@ -312,15 +312,17 @@ function psite_session_gc ($lifetime) {
 }
 
 function psite_session () {
-    if (get_db () == NULL)
-        fatal ("no db for session handler");
+    if (@$options['db']) {
+        if (get_db () == NULL)
+            fatal ("no db for session handler");
 
-	session_set_save_handler ("psite_session_open",
-				  "psite_session_close",
-				  "psite_session_read",
-				  "psite_session_write",
-				  "psite_session_destroy",
-				  "psite_session_gc");
+        session_set_save_handler ("psite_session_open",
+            "psite_session_close",
+            "psite_session_read",
+            "psite_session_write",
+            "psite_session_destroy",
+            "psite_session_gc");
+    }
 	session_start ();
 }
 
