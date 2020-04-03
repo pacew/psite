@@ -314,7 +314,7 @@ def setup_daemon():
     cfg = psite.get_cfg()
     dprog = psite.get_option("daemon")
     if dprog is None:
-        reutn
+        return
     dname = re.sub(r'[.].*$', '', dprog)
     service_name = "{}.service".format(dname)
 
