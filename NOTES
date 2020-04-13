@@ -1,3 +1,6 @@
+pip3 install python-daemon
+pip3 install python-pidfile
+
 ln -s `pwd`/psite ~/bin/psite
 
 psite install

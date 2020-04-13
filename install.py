@@ -3,6 +3,7 @@ import sys
 import re
 import getpass
 import random
+import pwd
 
 import psite
 
@@ -325,8 +326,7 @@ def setup_daemon():
     unit += "[Service]\n"
     unit += "Type=simple\n"
     unit += "ExecStart={}/{} start\n".format(cfg['src_dir'], dprog)
-    unit += "User=pace\n"
-    unit += "WorkingDirectory={}".format(cfg['src_dir'])
+    unit += "WorkingDirectory={}\n".format(cfg['src_dir'])
     unit += "\n"
     unit += "[Install]\n"
     unit += "WantedBy=multi-user.target\n"
@@ -339,6 +339,54 @@ def setup_daemon():
     if old != unit:
         print("sudo sh -c 'cp TMP.service {} && systemctl daemon-reload'".format(uname))
 
+def setup_tunnel():
+    cfg = psite.get_cfg()
+    tunnel_host = psite.get_option("tunnel_host")
+    tunnel_sshd_port = psite.get_option("tunnel_sshd_port")
+    tunnel_port = psite.get_option("tunnel_port")
+
+    if tunnel_host is None or tunnel_sshd_port is None or tunnel_port is None:
+        return;
+
+    service_name = "{}-tunnel.service".format(cfg['siteid'])
+    keyfile = "tunnel-key"
+
+    if not os.path.isfile(keyfile):
+        print("you must obtain", keyfile, "to set up the ssh tunnel")
+        return
+
+    tun = ""
+    tun += "ssh"
+    tun += " -NTC"
+    tun += " -o ServerAliveInterval=60"
+    tun += " -o ExitOnForwardFailure=yes"
+    tun += " -o StrictHostKeyChecking=no"
+    tun += " -R {}:localhost:22".format(tunnel_port)
+    tun += " -i {}".format(keyfile)
+    tun += " -p {}".format(tunnel_sshd_port)
+    tun += " tunnel@{}".format(tunnel_host)
+
+    unit = ""
+    unit += "[Unit]\n"
+    unit += "Description={} ssh tunnel\n".format(cfg['siteid'])
+    unit += "\n"
+    unit += "[Service]\n"
+    unit += "Type=simple\n"
+    unit += "ExecStart={}\n".format(tun)
+    unit += "WorkingDirectory={}\n".format(cfg['src_dir'])
+    unit += "\n"
+    unit += "[Install]\n"
+    unit += "WantedBy=multi-user.target\n"
+
+    with open("TMP.tunnel", "w") as outf:
+        outf.write(unit)
+
+    uname = "/etc/systemd/system/{}".format(service_name)
+    old = psite.slurp_file(uname)
+    if old != unit:
+        print(("sudo sh -c 'cp TMP.tunnel {} &&"
+               " systemctl daemon-reload'").format(uname))
+        
 def setup_htaccess():
     cfg = psite.get_cfg()
 
@@ -366,6 +414,7 @@ def install(site_name_arg=None, conf_key_arg=None):
 
     setup_cron()
     setup_daemon()
+    setup_tunnel()
 
     print(cfg['plain_url'])
     if cfg['ssl_url'] != "":
@@ -373,3 +422,20 @@ def install(site_name_arg=None, conf_key_arg=None):
     print(cfg['local_url'])
 
     psite.write_json("cfg.json", cfg)
+
+def tunnel_install():
+    if not os.path.isfile("tunnel-key.pub"):
+        print("you must obtain tunnel-key.pub to install a tunnel")
+        return
+    
+    try:
+        pwd.getpwnam("tunnel")
+    except KeyError:
+        print ("sudo adduser --system tunnel")
+    print("sudo passwd --quiet --delete tunnel")
+    print("sudo chsh -s /usr/sbin/nologin tunnel")
+
+    print("sudo mkdir -p /home/tunnel/.ssh")
+    print("sudo chmod 700 /home/tunnel/.ssh")
+    print("sudo cp tunnel-key.pub /home/tunnel/.ssh/")
+    print("sudo chown -R tunnel /home/tunnel/.ssh")
