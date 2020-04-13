@@ -1,6 +1,10 @@
 pip3 install python-daemon
 pip3 install python-pidfile
 
+systemctl list-unit-files | grep DAEMON
+
+
+
 ln -s `pwd`/psite ~/bin/psite
 
 psite install

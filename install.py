@@ -317,13 +317,14 @@ def setup_daemon():
     if dprog is None:
         return
     dname = re.sub(r'[.].*$', '', dprog)
-    service_name = "{}.service".format(dname)
+    service_name = "{}-{}.service".format(cfg['siteid'], dname)
 
     unit = ""
     unit += "[Unit]\n"
     unit += "Description={}\n".format(dprog)
     unit += "\n"
     unit += "[Service]\n"
+    unit += "User={}\n".format(getpass.getuser())
     unit += "Type=simple\n"
     unit += "ExecStart={}/{} start\n".format(cfg['src_dir'], dprog)
     unit += "WorkingDirectory={}\n".format(cfg['src_dir'])
@@ -356,7 +357,7 @@ def setup_tunnel():
         return
 
     tun = ""
-    tun += "ssh"
+    tun += "/usr/bin/ssh"
     tun += " -NTC"
     tun += " -o ServerAliveInterval=60"
     tun += " -o ExitOnForwardFailure=yes"
@@ -371,6 +372,7 @@ def setup_tunnel():
     unit += "Description={} ssh tunnel\n".format(cfg['siteid'])
     unit += "\n"
     unit += "[Service]\n"
+    unit += "User={}\n".format(getpass.getuser())
     unit += "Type=simple\n"
     unit += "ExecStart={}\n".format(tun)
     unit += "WorkingDirectory={}\n".format(cfg['src_dir'])
