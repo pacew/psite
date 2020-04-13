@@ -439,5 +439,5 @@ def tunnel_install():
 
     print("sudo mkdir -p /home/tunnel/.ssh")
     print("sudo chmod 700 /home/tunnel/.ssh")
-    print("sudo cp tunnel-key.pub /home/tunnel/.ssh/")
+    print("sudo cp tunnel-key.pub /home/tunnel/.ssh/authorized_keys")
     print("sudo chown -R tunnel /home/tunnel/.ssh")
