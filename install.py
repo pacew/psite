@@ -252,7 +252,7 @@ def setup_name_and_ports():
 
     if 'wss_port' not in cfg:
         port = psite.get_option("wss_port")
-        if port == "":
+        if port is None:
             port = get_free_port()
         cfg['wss_port'] = port
 
