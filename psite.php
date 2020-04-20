@@ -697,7 +697,7 @@ function make_option ($val, $curval, $desc)
 	else
 		$selected = "";
 	
-	$body .= sprintf ("<option value='%d' $selected>", $val);
+	$body .= sprintf ("<option value='%s' $selected>", $val);
 	$body .= h ($desc);
 	$body .= "</option>\n";
 }

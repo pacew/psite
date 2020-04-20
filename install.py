@@ -251,7 +251,10 @@ def setup_name_and_ports():
             cfg['plain_port'] = get_free_port()
 
     if 'wss_port' not in cfg:
-        cfg['wss_port'] = get_free_port()
+        port = psite.get_option("wss_port")
+        if port == "":
+            port = get_free_port()
+        cfg['wss_port'] = port
 
 
 def setup_urls():
@@ -370,12 +373,15 @@ def setup_tunnel():
     unit = ""
     unit += "[Unit]\n"
     unit += "Description={} ssh tunnel\n".format(cfg['siteid'])
+    unit += "StartLimitIntervalSec=0\n"
     unit += "\n"
     unit += "[Service]\n"
     unit += "User={}\n".format(getpass.getuser())
     unit += "Type=simple\n"
     unit += "ExecStart={}\n".format(tun)
     unit += "WorkingDirectory={}\n".format(cfg['src_dir'])
+    unit += "Restart=always\n"
+    unit += "RestartSec=30\n"
     unit += "\n"
     unit += "[Install]\n"
     unit += "WantedBy=multi-user.target\n"
@@ -415,8 +421,10 @@ def install(site_name_arg=None, conf_key_arg=None):
         setup_htaccess()
 
     setup_cron()
+
     setup_daemon()
-    setup_tunnel()
+
+    # setup_tunnel()
 
     print(cfg['plain_url'])
     if cfg['ssl_url'] != "":
