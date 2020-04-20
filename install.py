@@ -329,7 +329,7 @@ def setup_daemon():
     unit += "[Service]\n"
     unit += "User=root\n"
     unit += "Type=simple\n"
-    unit += "ExecStart={}/{} start\n".format(cfg['src_dir'], dprog)
+    unit += "ExecStart={}/{} run\n".format(cfg['src_dir'], dprog)
     unit += "WorkingDirectory={}\n".format(cfg['src_dir'])
     unit += "\n"
     unit += "[Install]\n"
