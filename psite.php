@@ -702,12 +702,24 @@ function make_option ($val, $curval, $desc)
 	$body .= "</option>\n";
 }
 
+$special_routes = [];
+function add_route ($script_name, $func) {
+    global $special_routes;
+    $special_routes[$script_name] = $func;
+}
+
 /* usage: require_once(router()); at end of app.php */
 function router () {
     $script_name = preg_replace ("|^/|", "", $_SERVER['SCRIPT_NAME']);
 
     if (strcmp ($script_name, "") == 0)
         $script_name = "index.php";
+
+    global $special_routes;
+    if (($func = @$special_routes[$script_name]) != NULL) {
+        ($func)();
+        exit ();
+    }
 
     if (preg_match ('/^[-_a-zA-Z0-9]+.php$/', $script_name)) { 
         /* safe name - only contains letters, digits, dash, or underline */
