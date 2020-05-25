@@ -1,0 +1,158 @@
+#! /usr/bin/env python3
+
+import sys
+
+import boto3
+ec2 = boto3.resource("ec2")
+ec2c = ec2.meta.client
+
+resp = ec2c.describe_key_pairs(Filters = [
+    {
+        'Name': 'tag-key',
+        'Values': [ 'main' ]
+    }
+])
+keys = resp['KeyPairs'][0]
+keypair_id = keys['KeyPairId']
+keypair_name = keys['KeyName']
+print("keypair", keypair_id, keypair_name)
+
+# aws ec2 create-security-group --group-name stdsg --description "pace standard"
+
+resp = ec2c.describe_security_groups(Filters = [
+    {
+        'Name': 'group-name',
+        'Values': ['stdsg']
+    }
+])
+group = resp['SecurityGroups'][0]
+sg_id = group['GroupId']
+sg_perms = group['IpPermissions']
+
+def is_covered(proto, from_port, to_port):
+    for perm in sg_perms:
+        if proto == perm['IpProtocol']:
+            if perm['FromPort'] <= from_port and to_port <= perm['ToPort']:
+                return True
+    return False
+
+    
+def sg_setup():
+    want = [
+        ("tcp", 22),
+        ("tcp", 80),
+        ("tcp", 443),
+        ("tcp", (8000,9999)),
+        ("udp", (10000,20000))
+    ]
+    
+    for item in want:
+        proto = item[0]
+        if type(item[1]) == int:
+            from_port = item[1]
+            to_port = from_port
+        else:
+            from_port = item[1][0]
+            to_port = item[1][1]
+            
+        if not is_covered(proto, from_port, to_port):
+            print("add", proto, from_port, to_port)
+
+            sg.authorize_ingress(IpPermissions=[
+                {
+                    'IpRanges': [
+                        {'CidrIp': '0.0.0.0/0'}
+                    ],
+                    'IpProtocol': proto,
+                    'FromPort': from_port,
+                    'ToPort': to_port
+                }
+            ])
+
+
+resp = ec2c.describe_images(
+    Owners=['099720109477'],
+    Filters = [
+        { 'Name': 'architecture', 'Values': ['x86_64'] },
+        { 'Name': 'description', 'Values': ['Canonical, Ubuntu, 18.04*'] },
+        { 'Name': 'name', 'Values': ['ubuntu/images/*'] },
+        { 'Name': 'state', 'Values': ['available'] },
+        { 'Name': 'root-device-type', 'Values': ['ebs'] },
+    ]
+)
+
+imgs = resp['Images']
+best = imgs[0]
+for img in resp['Images']:
+    if img['CreationDate'] > best['CreationDate']:
+        best = img
+ami_id = best['ImageId']
+print(ami_id, best['Description'])
+
+def launch(hostname):
+    ec2c.run_instances(
+        ImageId=ami_id,
+        InstanceType='t2.micro',
+        KeyName=keypair,
+        MaxCount=1,
+        MinCount=1,
+        SecurityGroupIds=[stdsg],
+        TagSpecifications=[
+            {
+                'ResourceType': 'instance',
+                'Tags': [
+                    {
+                        "Key": "hostname",
+                        "Value": hostname
+                    }
+                ]
+            }
+        ]
+    )
+
+
+def find_instance():
+    resp = ec2c.describe_instances(Filters = [{ 
+        'Name': "tag:hostname",
+        "Values": [hostname]
+        }])
+    for res in resp['Reservations']:
+        for inst in res['Instances']:
+            if inst['State']['Name'] == "terminated":
+                continue
+            return inst
+    return None
+
+
+inst = find_instance()
+if inst is None:
+    print("need launch")
+    sys.exit(0)
+    launch();
+    sys.exit(0)
+
+inst_id = inst['InstanceId']
+print(inst_id)
+
+def find_address():
+    resp = ec2c.describe_addresses()
+    for addr in resp['Addresses']:
+        for tag in addr['Tags']:
+            if tag['Key'] == "hostname" and tag['Value'] == hostname:
+                return addr
+    return None
+
+def check_address():
+    addr = find_address()
+    if addr is None:
+        print("you need to make an elastic ip and give it tag hostname=dns")
+        sys.exit(1)
+    if addr.get("InstanceId") != inst_id:
+        print("trying to associate address...")
+        ec2c.associate_address (AllocationId = addr['AllocationId'],
+                                InstanceId = inst_id)
+
+check_address()
+
+
+
