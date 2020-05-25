@@ -178,6 +178,17 @@ def get_elastic_ip(hostname):
 
             
 def launch_instance(hostname):
+    script = ("#! /bin/bash\n"
+              "(\n"
+              " date\n"
+              " for a in $*\n"
+              " do\n"
+              "   echo arg \"$a\"\n"
+              " done\n"
+              " env\n"
+              " echo\n"
+              ") >> /var/run/ud-test")
+    
     ami_id = find_ami()
 
     inst = ec2c.run_instances(
@@ -187,6 +198,7 @@ def launch_instance(hostname):
         MaxCount=1,
         MinCount=1,
         SecurityGroupIds=[sg_id],
+        UserData=script,
         TagSpecifications=[
             {
                 'ResourceType': 'instance',
@@ -208,19 +220,20 @@ def find_instance(hostname):
     ])
     for res in resp['Reservations']:
         for inst in res['Instances']:
-            if inst['State']['Name'] == "terminated":
-                continue
-            return inst
+            if inst['State']['Name'] == "running":
+                return inst
     return None
 
 inst = find_instance(hostname)
 if inst is None:
     print("launching...")
-    print("oops")
+    if True:
+        inst = launch_instance(hostname)
+    else:
+        print("skipped")
     sys.exit(0)
-    inst = launch_instance(hostname)
-    pprint(inst)
-    sys.exit(0)
+
+pprint(inst)
 
 inst_id = inst['InstanceId']
 eip = get_elastic_ip(hostname)
@@ -229,6 +242,11 @@ if 'InstanceId' not in eip:
     print("associating eip to inst")
     ec2c.associate_address (AllocationId = eip['AllocationId'],
                             InstanceId = inst_id)
+
+ipaddr = eip['PublicIp']
+shortname = hostname.split(".")[0]
+print(f"ssh-keygen -R {ipaddr} -R {hostname} -R {shortname}")
+
 print(f"try ssh ubuntu@{hostname}")
 
 
