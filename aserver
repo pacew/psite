@@ -1,7 +1,10 @@
 #! /usr/bin/env python3
 
 import sys
+import os
+import pwd
 import re
+import shlex
 
 import boto3
 
@@ -9,12 +12,8 @@ from pprint import PrettyPrinter
 def pprint(val):
     PrettyPrinter().pprint(val)
 
-
-
-
 ec2 = boto3.resource("ec2")
 ec2c = ec2.meta.client
-
 r53c = boto3.client('route53')
 
 resp = ec2c.describe_key_pairs(Filters = [
@@ -101,8 +100,6 @@ def find_ami():
     print(ami_id, best['Description'])
     return ami_id
 
-hostname = "a1.pacew.com"
-
 def find_zone(hostname):
     last2 = hostname.split(".")[-2:]
     domain_name = ".".join(last2)
@@ -115,9 +112,9 @@ def find_zone(hostname):
             return zone['Id']
     return None
 
-zone_id = find_zone(hostname)
-
 def lookup_addr_in_route53(hostname):
+    zone_id = find_zone(hostname)
+
     resp = r53c.test_dns_answer(HostedZoneId = zone_id,
                                 RecordName = hostname,
                                 RecordType = "A")
@@ -131,6 +128,8 @@ def make_eip():
     return resp
 
 def set_route53(hostname, ipaddr):
+    zone_id = find_zone(hostname)
+
     r53c.change_resource_record_sets(
         ChangeBatch={
             'Changes': [
@@ -177,17 +176,31 @@ def get_elastic_ip(hostname):
     return eip
 
             
+def make_script():
+    p = pwd.getpwuid(os.getuid())
+    aboot_user = p.pw_name
+    aboot_gecos = p.pw_gecos.rstrip(",")
+
+    s = list()
+    s.append("#! /bin/bash")
+    s.append("ABOOT_USER={}".format(shlex.quote(aboot_user)))
+    s.append("ABOOT_GECOS={}".format(shlex.quote(aboot_gecos)))
+
+    script = "\n".join(s)
+    script += "\n\n"
+
+    with open("aboot") as f:
+        script += f.read()
+
+    return script
+
 def launch_instance(hostname):
-    script = ("#! /bin/bash\n"
-              "(\n"
-              " date\n"
-              " for a in $*\n"
-              " do\n"
-              "   echo arg \"$a\"\n"
-              " done\n"
-              " env\n"
-              " echo\n"
-              ") >> /var/run/ud-test")
+    answer = input (f"launch an instance for {hostname} (y/n)? ")
+    if answer != "y":
+        print("aborted")
+        sys.exit(1)
+
+    script = make_script()
     
     ami_id = find_ami()
 
@@ -222,33 +235,59 @@ def find_instance(hostname):
         for inst in res['Instances']:
             if inst['State']['Name'] == "running":
                 return inst
+            print("skipping inst {} {}".format(inst['InstanceId'],
+                                               inst['State']['Name']))
     return None
 
-inst = find_instance(hostname)
-if inst is None:
-    print("launching...")
-    if True:
+def aserver_up(hostname):
+    inst = find_instance(hostname)
+    if inst is None:
+        print("launching...")
         inst = launch_instance(hostname)
+        sys.exit(0)
+
+    inst_id = inst['InstanceId']
+    print("found inst {} {}".format(inst_id, inst['State']['Name']))
+
+    eip = get_elastic_ip(hostname)
+
+    if 'InstanceId' not in eip:
+        print("associating eip to inst")
+        ec2c.associate_address (AllocationId = eip['AllocationId'],
+                                InstanceId = inst_id)
+
+    ipaddr = eip['PublicIp']
+    shortname = hostname.split(".")[0]
+    print()
+    print(f"ssh-keygen -qR {ipaddr}")
+    print(f"ssh-keygen -qR {hostname}")
+    print(f"ssh-keygen -qR {shortname}")
+    print()
+
+    print(f"try ssh ubuntu@{hostname}")
+
+def aserver_down(hostname):
+    inst = find_instance(hostname)
+    if inst is None:
+        print(f"{hostname} not found")
     else:
-        print("skipped")
-    sys.exit(0)
-
-pprint(inst)
-
-inst_id = inst['InstanceId']
-eip = get_elastic_ip(hostname)
-
-if 'InstanceId' not in eip:
-    print("associating eip to inst")
-    ec2c.associate_address (AllocationId = eip['AllocationId'],
-                            InstanceId = inst_id)
-
-ipaddr = eip['PublicIp']
-shortname = hostname.split(".")[0]
-print(f"ssh-keygen -R {ipaddr} -R {hostname} -R {shortname}")
-
-print(f"try ssh ubuntu@{hostname}")
+        inst_id = inst['InstanceId']
+        resp = ec2c.terminate_instances(InstanceIds=[inst_id])
+        print("ok")
 
 
+def main():
+    if len(sys.argv) != 3:
+        print("usage: aserver hostname up|down")
+        sys.exit (1)
 
+    hostname = sys.argv[1]
+    op = sys.argv[2]
 
+    if op == "up":
+        aserver_up(hostname)
+    elif op == "down":
+        aserver_down(hostname)
+
+if __name__ == "__main__":
+    main()

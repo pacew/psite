@@ -1,0 +1,50 @@
+#! /bin/bash
+
+# this script runs only on the very first boot
+
+exec > /tmp/about.out 2>&1
+
+set -x
+date
+
+export DEBIAN_FRONTEND=noninteractive
+
+apt-get update -y
+apt-get upgrade -y
+
+date
+
+apt-get install -y \
+	emacs-nox \
+	git \
+	build-essential \
+	python3-pip \
+	openssh-server \
+	pwgen \
+	apache2 \
+	libapache2-mod-php \
+	apt-file \
+	pkg-config \
+	libreadline-dev \
+	php-xdebug
+
+a2enmod php7.3
+a2enmod headers
+a2enmod rewrite
+a2enmod ssl
+
+echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+adduser --disabled-password --gecos "$ABOOT_GECOS" $ABOOT_USER
+
+addgroup sudo2
+adduser $ABOOT_USER sudo2
+echo '%sudo2 ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/99-sudo2
+
+s=/home/$ABOOT_USER/.ssh
+mkdir -m 700 -p $s
+
+cp /home/ubuntu/.ssh/authorized_keys $s/
+
+chown -R $ABOOT_USER:$ABOOT_USER $s
+chmod 700 $s
