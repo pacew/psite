@@ -6,6 +6,8 @@ import boto3
 ec2 = boto3.resource("ec2")
 ec2c = ec2.meta.client
 
+r53c = boto3.client('route53')
+
 resp = ec2c.describe_key_pairs(Filters = [
     {
         'Name': 'tag-key',
@@ -94,7 +96,9 @@ def find_ami():
 hostname = "a1.pacew.com"
 
 
-
+resp = r53c.list_hosted_zones()
+print(resp)
+sys.exit(0)
 
 
 def launch(hostname):
