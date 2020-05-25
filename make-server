@@ -70,24 +70,32 @@ def sg_setup():
             ])
 
 
-resp = ec2c.describe_images(
-    Owners=['099720109477'],
-    Filters = [
-        { 'Name': 'architecture', 'Values': ['x86_64'] },
-        { 'Name': 'description', 'Values': ['Canonical, Ubuntu, 18.04*'] },
-        { 'Name': 'name', 'Values': ['ubuntu/images/*'] },
-        { 'Name': 'state', 'Values': ['available'] },
-        { 'Name': 'root-device-type', 'Values': ['ebs'] },
-    ]
-)
+def find_ami():
+    resp = ec2c.describe_images(
+        Owners=['099720109477'],
+        Filters = [
+            { 'Name': 'architecture', 'Values': ['x86_64'] },
+            { 'Name': 'description', 'Values': ['Canonical, Ubuntu, 18.04*'] },
+            { 'Name': 'name', 'Values': ['ubuntu/images/*'] },
+            { 'Name': 'state', 'Values': ['available'] },
+            { 'Name': 'root-device-type', 'Values': ['ebs'] },
+        ]
+    )
 
-imgs = resp['Images']
-best = imgs[0]
-for img in resp['Images']:
-    if img['CreationDate'] > best['CreationDate']:
-        best = img
-ami_id = best['ImageId']
-print(ami_id, best['Description'])
+    imgs = resp['Images']
+    best = imgs[0]
+    for img in resp['Images']:
+        if img['CreationDate'] > best['CreationDate']:
+            best = img
+    ami_id = best['ImageId']
+    print(ami_id, best['Description'])
+    return ami_id
+
+hostname = "a1.pacew.com"
+
+
+
+
 
 def launch(hostname):
     ec2c.run_instances(
