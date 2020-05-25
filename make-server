@@ -1,8 +1,17 @@
 #! /usr/bin/env python3
 
 import sys
+import re
 
 import boto3
+
+from pprint import PrettyPrinter
+def pprint(val):
+    PrettyPrinter().pprint(val)
+
+
+
+
 ec2 = boto3.resource("ec2")
 ec2c = ec2.meta.client
 
@@ -17,7 +26,6 @@ resp = ec2c.describe_key_pairs(Filters = [
 keys = resp['KeyPairs'][0]
 keypair_id = keys['KeyPairId']
 keypair_name = keys['KeyName']
-print("keypair", keypair_id, keypair_name)
 
 # aws ec2 create-security-group --group-name stdsg --description "pace standard"
 
@@ -95,20 +103,90 @@ def find_ami():
 
 hostname = "a1.pacew.com"
 
+def find_zone(hostname):
+    last2 = hostname.split(".")[-2:]
+    domain_name = ".".join(last2)
 
-resp = r53c.list_hosted_zones()
-print(resp)
-sys.exit(0)
+    resp = r53c.list_hosted_zones()
+    zones = resp['HostedZones']
+    for zone in zones:
+        name = zone['Name'].strip(".")
+        if name == domain_name:
+            return zone['Id']
+    return None
 
+zone_id = find_zone(hostname)
 
-def launch(hostname):
-    ec2c.run_instances(
+def lookup_addr_in_route53(hostname):
+    resp = r53c.test_dns_answer(HostedZoneId = zone_id,
+                                RecordName = hostname,
+                                RecordType = "A")
+    data = resp['RecordData']
+    if len(data) > 0:
+        return data[0]
+    return None
+
+def make_eip():
+    resp = ec2c.allocate_address(Domain='vpc')
+    return resp
+
+def set_route53(hostname, ipaddr):
+    r53c.change_resource_record_sets(
+        ChangeBatch={
+            'Changes': [
+                {
+                    'Action': 'CREATE',
+                    'ResourceRecordSet': {
+                        'Name': hostname,
+                        'ResourceRecords': [{'Value': ipaddr,}],
+                        'TTL': 60,
+                        'Type': 'A',
+                    },
+                },
+            ]},
+        HostedZoneId=zone_id)
+
+def find_unused_eip():
+    resp = ec2c.describe_addresses ()
+    for addr in resp['Addresses']:
+        if addr.get("AssociationId") is None:
+            return addr
+    return None
+
+def find_eip_for_ipaddr(ipaddr):
+    resp = ec2c.describe_addresses ()
+    for addr in resp['Addresses']:
+        if addr['PublicIp'] == ipaddr:
+            return addr
+    return None
+
+def get_elastic_ip(hostname):
+    ipaddr = lookup_addr_in_route53(hostname)
+
+    if ipaddr is None:
+        eip = find_unused_eip()
+        if eip is None:
+            eip = make_eip()
+        setdns (hostname, eip)
+        return eip
+
+    eip = find_eip_for_ipaddr(ipaddr)
+    if eip is None:
+        print("{hostname} wants {ipaddr} but there's no eip for that")
+        sys.exit(1)
+    return eip
+
+            
+def launch_instance(hostname):
+    ami_id = find_ami()
+
+    inst = ec2c.run_instances(
         ImageId=ami_id,
         InstanceType='t2.micro',
-        KeyName=keypair,
+        KeyName=keypair_name,
         MaxCount=1,
         MinCount=1,
-        SecurityGroupIds=[stdsg],
+        SecurityGroupIds=[sg_id],
         TagSpecifications=[
             {
                 'ResourceType': 'instance',
@@ -121,13 +199,13 @@ def launch(hostname):
             }
         ]
     )
+    return inst
 
 
-def find_instance():
-    resp = ec2c.describe_instances(Filters = [{ 
-        'Name': "tag:hostname",
-        "Values": [hostname]
-        }])
+def find_instance(hostname):
+    resp = ec2c.describe_instances(Filters=[
+        {'Name': 'tag:hostname', 'Values': [hostname]}
+    ])
     for res in resp['Reservations']:
         for inst in res['Instances']:
             if inst['State']['Name'] == "terminated":
@@ -135,36 +213,24 @@ def find_instance():
             return inst
     return None
 
-
-inst = find_instance()
+inst = find_instance(hostname)
 if inst is None:
-    print("need launch")
+    print("launching...")
+    print("oops")
     sys.exit(0)
-    launch();
+    inst = launch_instance(hostname)
+    pprint(inst)
     sys.exit(0)
 
 inst_id = inst['InstanceId']
-print(inst_id)
+eip = get_elastic_ip(hostname)
 
-def find_address():
-    resp = ec2c.describe_addresses()
-    for addr in resp['Addresses']:
-        for tag in addr['Tags']:
-            if tag['Key'] == "hostname" and tag['Value'] == hostname:
-                return addr
-    return None
+if 'InstanceId' not in eip:
+    print("associating eip to inst")
+    ec2c.associate_address (AllocationId = eip['AllocationId'],
+                            InstanceId = inst_id)
+print(f"try ssh ubuntu@{hostname}")
 
-def check_address():
-    addr = find_address()
-    if addr is None:
-        print("you need to make an elastic ip and give it tag hostname=dns")
-        sys.exit(1)
-    if addr.get("InstanceId") != inst_id:
-        print("trying to associate address...")
-        ec2c.associate_address (AllocationId = addr['AllocationId'],
-                                InstanceId = inst_id)
-
-check_address()
 
 
 
