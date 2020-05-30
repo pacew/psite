@@ -215,21 +215,33 @@ def make_script(hostname, vol):
     return script
 
 def launch_instance(hostname):
-    answer = input(f"launch an instance for {hostname} (y/n)? ")
-    if answer != "y":
-        print("aborted")
-        sys.exit(1)
-
     place = dict()
 
     vol = find_ebs_volume("a1.pacew.com")
     if vol is not None:
         place['AvailabilityZone'] = vol['AvailabilityZone']
-        print("placement", place)
 
     script = make_script(hostname, vol)
+    with open("TMP.script", "w") as f:
+        f.write(script)
     
     ami_id = find_ami()
+
+    print("")
+    print("")
+
+    if vol is not None:
+        print("will use volume", vol['VolumeId'])
+
+    print("placement", place)
+    print("ami", ami_id)
+    print("launch script in ./TMP.script")
+    answer = input(f"launch an instance for {hostname} (y/n)? ")
+    if answer != "y":
+        print("aborted")
+        sys.exit(1)
+
+
 
     inst = ec2c.run_instances(
         ImageId=ami_id,
