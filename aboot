@@ -7,6 +7,12 @@ exec > /tmp/about.out 2>&1
 set -x
 date
 
+if [ "x$ABOOT_HOSTNAME" != "x" ]
+then
+    echo "$ABOOT_HOSTNAME" > /etc/hostname
+    hostname $ABOOT_HOSTNAME
+fi
+
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get update -y
@@ -19,7 +25,6 @@ apt-get install -y \
 	git \
 	build-essential \
 	python3-pip \
-	openssh-server \
 	pwgen \
 	apache2 \
 	libapache2-mod-php \
@@ -48,3 +53,12 @@ cp /home/ubuntu/.ssh/authorized_keys $s/
 
 chown -R $ABOOT_USER:$ABOOT_USER $s
 chmod 700 $s
+
+
+if [ "x$ABOOT_EBS_UUID" != "" ]
+then
+    mkdir -p /a
+    chown $ABOOT_USER /a
+    echo "UUID=\"${ABOOT_EBS_UUID}\" /a xfs defaults,nofail 0 2" >> /etc/fstab
+fi
+

@@ -175,8 +175,22 @@ def get_elastic_ip(hostname):
         sys.exit(1)
     return eip
 
-            
-def make_script():
+def get_tag(item, tag):
+    for taginfo in item['Tags']:
+        if taginfo['Key'] == tag:
+            return taginfo['Value']
+    return None
+
+def find_ebs_volume(hostname):
+    resp = ec2c.describe_volumes(Filters=[
+        {'Name': 'tag:Name', 'Values': [hostname]}
+    ])
+    vols = resp['Volumes']
+    if len(vols) == 0:
+        return None
+    return vols[0]
+
+def make_script(hostname, vol):
     p = pwd.getpwuid(os.getuid())
     aboot_user = p.pw_name
     aboot_gecos = p.pw_gecos.rstrip(",")
@@ -185,6 +199,12 @@ def make_script():
     s.append("#! /bin/bash")
     s.append("ABOOT_USER={}".format(shlex.quote(aboot_user)))
     s.append("ABOOT_GECOS={}".format(shlex.quote(aboot_gecos)))
+    s.append("ABOOT_HOSTNAME={}".format(shlex.quote(hostname)))
+
+    if vol is not None:
+        uuid = get_tag(vol, "uuid")
+        if uuid is not None:
+            s.append("ABOOT_EBS_UUID={}".format(shlex.quote(uuid)))
 
     script = "\n".join(s)
     script += "\n\n"
@@ -195,18 +215,26 @@ def make_script():
     return script
 
 def launch_instance(hostname):
-    answer = input (f"launch an instance for {hostname} (y/n)? ")
+    answer = input(f"launch an instance for {hostname} (y/n)? ")
     if answer != "y":
         print("aborted")
         sys.exit(1)
 
-    script = make_script()
+    place = dict()
+
+    vol = find_ebs_volume("a1.pacew.com")
+    if vol is not None:
+        place['AvailabilityZone'] = vol['AvailabilityZone']
+        print("placement", place)
+
+    script = make_script(hostname, vol)
     
     ami_id = find_ami()
 
     inst = ec2c.run_instances(
         ImageId=ami_id,
         InstanceType='t2.micro',
+        Placement=place,
         KeyName=keypair_name,
         MaxCount=1,
         MinCount=1,
@@ -217,7 +245,7 @@ def launch_instance(hostname):
                 'ResourceType': 'instance',
                 'Tags': [
                     {
-                        "Key": "hostname",
+                        "Key": "Name",
                         "Value": hostname
                     }
                 ]
@@ -229,7 +257,7 @@ def launch_instance(hostname):
 
 def find_instance(hostname):
     resp = ec2c.describe_instances(Filters=[
-        {'Name': 'tag:hostname', 'Values': [hostname]}
+        {'Name': 'tag:Name', 'Values': [hostname]}
     ])
     for res in resp['Reservations']:
         for inst in res['Instances']:
@@ -244,6 +272,7 @@ def aserver_up(hostname):
     if inst is None:
         print("launching...")
         inst = launch_instance(hostname)
+        print("you'll need to run ./aserver later to attach eip")
         sys.exit(0)
 
     inst_id = inst['InstanceId']
@@ -258,7 +287,9 @@ def aserver_up(hostname):
 
     ipaddr = eip['PublicIp']
     shortname = hostname.split(".")[0]
+
     print()
+    print("# clean out old host key data with these commands")
     print(f"ssh-keygen -qR {ipaddr}")
     print(f"ssh-keygen -qR {hostname}")
     print(f"ssh-keygen -qR {shortname}")
