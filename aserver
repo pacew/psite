@@ -181,6 +181,14 @@ def get_tag(item, tag):
             return taginfo['Value']
     return None
 
+#
+# to make a long lived volume, create it in the aws console
+# (be user to use the right availability zone for the instance
+# you're using).  give it tag Name = hostname
+# attach it
+# mkfs -t xfs /dev/xvdf
+# run blkid to get uuid
+# set tag uuid to the uuid
 def find_ebs_volume(hostname):
     resp = ec2c.describe_volumes(Filters=[
         {'Name': 'tag:Name', 'Values': [hostname]}
@@ -204,6 +212,7 @@ def make_script(hostname, vol):
     if vol is not None:
         uuid = get_tag(vol, "uuid")
         if uuid is not None:
+            print("ebs uuid", uuid)
             s.append("ABOOT_EBS_UUID={}".format(shlex.quote(uuid)))
 
     script = "\n".join(s)
@@ -240,8 +249,6 @@ def launch_instance(hostname):
     if answer != "y":
         print("aborted")
         sys.exit(1)
-
-
 
     inst = ec2c.run_instances(
         ImageId=ami_id,
