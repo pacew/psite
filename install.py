@@ -24,9 +24,10 @@ def make_url(scheme, host, port):
 
 def make_cert_filenames(dns_name):
     cert_dir = "/etc/apache2"
-    return dict(crt="{}/{}.crt".format(cert_dir, dns_name),
-                key="{}/{}.key".format(cert_dir, dns_name),
-                chain="{}/{}.chain.pem".format(cert_dir, dns_name))
+    name = dns_name.lower()
+    return dict(crt="{}/{}.crt".format(cert_dir, name),
+                key="{}/{}.key".format(cert_dir, name),
+                chain="{}/{}.chain.pem".format(cert_dir, name))
 
 
 def try_cert(dns_name):
@@ -115,7 +116,8 @@ def add_rewrites(ssl_flag):
     conf += "  RewriteRule ^/(.*) {}$1 [R]\n".format(cfg['main_url'])
     conf += "\n"
 
-    if psite.get_option("flat", 0) == 0:
+    if (psite.get_option("flat", 0) == 0
+        or psite.get_option("app_php", 0) != 0):
         # send all non-static files to app.php
         conf += ("  RewriteCond {}%{{REQUEST_FILENAME}} !-f\n"
                  .format(cfg['document_root']))
