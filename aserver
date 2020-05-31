@@ -300,13 +300,20 @@ def aserver_down(hostname):
         resp = ec2c.terminate_instances(InstanceIds=[inst_id])
         print("ok")
 
+def usage():
+    print("usage: aserver hostname [Down]")
+    sys.exit (1)
+    
+
 
 def main():
     if len(sys.argv) < 2:
-        print("usage: aserver hostname [Down]")
-        sys.exit (1)
-
+        usage()
+        
     hostname = sys.argv[1]
+
+    if len(hostname.split(".")) != 3:
+        usage()
 
     if len(sys.argv) > 2 and sys.argv[2] == "Down":
         aserver_down(hostname)
