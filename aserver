@@ -16,75 +16,31 @@ ec2 = boto3.resource("ec2")
 ec2c = ec2.meta.client
 r53c = boto3.client('route53')
 
-resp = ec2c.describe_key_pairs(Filters = [
-    {
+params = dict()
+
+def find_key_name():
+    resp = ec2c.describe_key_pairs(Filters = [{
         'Name': 'tag-key',
         'Values': [ 'main' ]
-    }
-])
-keys = resp['KeyPairs'][0]
-keypair_id = keys['KeyPairId']
-keypair_name = keys['KeyName']
+    }])
+    keys = resp['KeyPairs'][0]
+    params['key_name'] = keys['KeyName']
 
-# aws ec2 create-security-group --group-name stdsg --description "pace standard"
 
-resp = ec2c.describe_security_groups(Filters = [
-    {
+def find_security_group():
+    resp = ec2c.describe_security_groups(Filters = [{
         'Name': 'group-name',
         'Values': ['stdsg']
-    }
-])
-group = resp['SecurityGroups'][0]
-sg_id = group['GroupId']
-sg_perms = group['IpPermissions']
-
-def is_covered(proto, from_port, to_port):
-    for perm in sg_perms:
-        if proto == perm['IpProtocol']:
-            if perm['FromPort'] <= from_port and to_port <= perm['ToPort']:
-                return True
-    return False
-
-    
-def sg_setup():
-    want = [
-        ("tcp", 22),
-        ("tcp", 80),
-        ("tcp", 443),
-        ("tcp", (8000,9999)),
-        ("udp", (10000,20000))
-    ]
-    
-    for item in want:
-        proto = item[0]
-        if type(item[1]) == int:
-            from_port = item[1]
-            to_port = from_port
-        else:
-            from_port = item[1][0]
-            to_port = item[1][1]
-            
-        if not is_covered(proto, from_port, to_port):
-            print("add", proto, from_port, to_port)
-
-            sg.authorize_ingress(IpPermissions=[
-                {
-                    'IpRanges': [
-                        {'CidrIp': '0.0.0.0/0'}
-                    ],
-                    'IpProtocol': proto,
-                    'FromPort': from_port,
-                    'ToPort': to_port
-                }
-            ])
-
+    }])
+    group = resp['SecurityGroups'][0]
+    params['sg_id'] = group['GroupId']
 
 def find_ami():
     resp = ec2c.describe_images(
         Owners=['099720109477'],
         Filters = [
             { 'Name': 'architecture', 'Values': ['x86_64'] },
-            { 'Name': 'description', 'Values': ['Canonical, Ubuntu, 18.04*'] },
+            { 'Name': 'description', 'Values': ['Canonical, Ubuntu, 20.04*'] },
             { 'Name': 'name', 'Values': ['ubuntu/images/*'] },
             { 'Name': 'state', 'Values': ['available'] },
             { 'Name': 'root-device-type', 'Values': ['ebs'] },
@@ -92,13 +48,18 @@ def find_ami():
     )
 
     imgs = resp['Images']
+
+    if len(imgs) == 0:
+        print("can't find ami")
+        sys.exit(1)
+        
     best = imgs[0]
     for img in resp['Images']:
         if img['CreationDate'] > best['CreationDate']:
             best = img
     ami_id = best['ImageId']
     print(ami_id, best['Description'])
-    return ami_id
+    params['ami_id'] = ami_id
 
 def find_zone(hostname):
     last2 = hostname.split(".")[-2:]
@@ -110,7 +71,9 @@ def find_zone(hostname):
         name = zone['Name'].strip(".")
         if name == domain_name:
             return zone['Id']
-    return None
+
+    print("invalid zone", hostname)
+    sys.exit(1)
 
 def lookup_addr_in_route53(hostname):
     zone_id = find_zone(hostname)
@@ -196,9 +159,14 @@ def find_ebs_volume(hostname):
     vols = resp['Volumes']
     if len(vols) == 0:
         return None
-    return vols[0]
+    vol = vols[0]
+    params['VolumeId'] = vol['VolumeId']
+    params['AvailabilityZone'] = vol['AvailabilityZone']
+    params['Attachments'] = vol['Attachments']
+    params['vol_uuid'] = get_tag(vol, "uuid")
 
-def make_script(hostname, vol):
+
+def make_script(hostname):
     p = pwd.getpwuid(os.getuid())
     aboot_user = p.pw_name
     aboot_gecos = p.pw_gecos.rstrip(",")
@@ -209,11 +177,10 @@ def make_script(hostname, vol):
     s.append("ABOOT_GECOS={}".format(shlex.quote(aboot_gecos)))
     s.append("ABOOT_HOSTNAME={}".format(shlex.quote(hostname)))
 
-    if vol is not None:
-        uuid = get_tag(vol, "uuid")
-        if uuid is not None:
-            print("ebs uuid", uuid)
-            s.append("ABOOT_EBS_UUID={}".format(shlex.quote(uuid)))
+    uuid = params.get('vol_uuid')
+    if uuid is not None:
+        print("ebs uuid", uuid)
+        s.append("ABOOT_EBS_UUID={}".format(shlex.quote(uuid)))
 
     script = "\n".join(s)
     script += "\n\n"
@@ -226,24 +193,22 @@ def make_script(hostname, vol):
 def launch_instance(hostname):
     place = dict()
 
-    vol = find_ebs_volume("a1.pacew.com")
-    if vol is not None:
-        place['AvailabilityZone'] = vol['AvailabilityZone']
+    if 'AvailabilityZone' in params:
+        place['AvailabilityZone'] = params['AvailabilityZone']
 
-    script = make_script(hostname, vol)
+    script = make_script(hostname)
     with open("TMP.script", "w") as f:
         f.write(script)
     
-    ami_id = find_ami()
-
+    find_ami()
+    find_key_name()
+    find_security_group()
+    
     print("")
     print("")
-
-    if vol is not None:
-        print("will use volume", vol['VolumeId'])
 
     print("placement", place)
-    print("ami", ami_id)
+    print("ami", params['ami_id'])
     print("launch script in ./TMP.script")
     answer = input(f"launch an instance for {hostname} (y/n)? ")
     if answer != "y":
@@ -251,13 +216,13 @@ def launch_instance(hostname):
         sys.exit(1)
 
     inst = ec2c.run_instances(
-        ImageId=ami_id,
+        ImageId=params['ami_id'],
         InstanceType='t3.small',
         Placement=place,
-        KeyName=keypair_name,
+        KeyName=params['key_name'],
         MaxCount=1,
         MinCount=1,
-        SecurityGroupIds=[sg_id],
+        SecurityGroupIds=[params['sg_id']],
         UserData=script,
         TagSpecifications=[
             {
@@ -282,11 +247,13 @@ def find_instance(hostname):
         for inst in res['Instances']:
             if inst['State']['Name'] == "running":
                 return inst
-            print("skipping inst {} {}".format(inst['InstanceId'],
+            print("ignoring inst {} {}".format(inst['InstanceId'],
                                                inst['State']['Name']))
     return None
 
 def aserver_up(hostname):
+    find_ebs_volume(hostname)
+
     inst = find_instance(hostname)
     if inst is None:
         print("launching...")
@@ -304,14 +271,22 @@ def aserver_up(hostname):
         ec2c.associate_address (AllocationId = eip['AllocationId'],
                                 InstanceId = inst_id)
 
+
+    if len(params['Attachments']) == 0:
+        print("attaching volume")
+        resp = ec2c.attach_volume(Device="/dev/sdf",
+                                  InstanceId=inst_id,
+                                  VolumeId=params['VolumeId'])
+
     ipaddr = eip['PublicIp']
     shortname = hostname.split(".")[0]
 
     print()
     print("# clean out old host key data with these commands")
-    print(f"ssh-keygen -qR {ipaddr}")
-    print(f"ssh-keygen -qR {hostname}")
-    print(f"ssh-keygen -qR {shortname}")
+    print()
+    print(f"ssh-keygen -qR {ipaddr} > /dev/null 2>&1")
+    print(f"ssh-keygen -qR {hostname} > /dev/null 2>&1")
+    print(f"ssh-keygen -qR {shortname} > /dev/null 2>&1")
     print()
 
     print(f"try ssh ubuntu@{hostname}")
@@ -327,17 +302,18 @@ def aserver_down(hostname):
 
 
 def main():
-    if len(sys.argv) != 3:
-        print("usage: aserver hostname up|down")
+    if len(sys.argv) < 2:
+        print("usage: aserver hostname [Down]")
         sys.exit (1)
 
     hostname = sys.argv[1]
-    op = sys.argv[2]
 
-    if op == "up":
-        aserver_up(hostname)
-    elif op == "down":
+    if len(sys.argv) > 2 and sys.argv[2] == "Down":
         aserver_down(hostname)
+        sys.exit (0)
+
+    aserver_up(hostname)
+
 
 if __name__ == "__main__":
     main()

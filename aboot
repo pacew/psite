@@ -60,11 +60,11 @@ cp /home/ubuntu/.ssh/authorized_keys $s/
 chown -R $ABOOT_USER:$ABOOT_USER $s
 chmod 700 $s
 
-
 if [ "x$ABOOT_EBS_UUID" != "x" ]
 then
     mkdir -p /a
     chown $ABOOT_USER /a
     echo "UUID=\"${ABOOT_EBS_UUID}\" /a xfs defaults,nofail 0 2" >> /etc/fstab
+    mount /a &
 fi
 
