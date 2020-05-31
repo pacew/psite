@@ -4,6 +4,9 @@
 # will be visible at
 # curl http://169.254.169.254/latest/user-data
 
+# will run from /var/lib/cloud/instances/instance-id/
+# output will go to /var/log/cloud-init-output.log
+
 
 exec > /tmp/aboot.out 2>&1
 
