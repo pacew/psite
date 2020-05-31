@@ -38,7 +38,7 @@ def try_cert(dns_name):
         cfg['key_file'] = names['key']
         if os.path.exists(names['chain']):
             cfg['chain_file'] = names['chain']
-            return True
+        return True
     return False
 
 
