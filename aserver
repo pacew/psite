@@ -283,11 +283,8 @@ def aserver_up(hostname):
     shortname = hostname.split(".")[0]
 
     print()
-    print("# clean out old host key data with these commands")
-    print()
-    print(f"ssh-keygen -qR {ipaddr} > /dev/null 2>&1")
-    print(f"ssh-keygen -qR {hostname} > /dev/null 2>&1")
-    print(f"ssh-keygen -qR {shortname} > /dev/null 2>&1")
+    print((f"for h in {ipaddr} {hostname} {shortname};"
+           " do ssh-keygen -R $h > /dev/null 2>&1; done"))
     print()
 
     print(f"try ssh ubuntu@{hostname}")
