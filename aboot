@@ -37,7 +37,8 @@ apt-get install -y \
 	apt-file \
 	pkg-config \
 	libreadline-dev \
-	php-xdebug
+	php-xdebug \
+	mlocate
 
 a2enmod php7.3
 a2enmod headers
