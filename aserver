@@ -100,7 +100,7 @@ def set_route53(hostname, ipaddr):
                     'Action': 'CREATE',
                     'ResourceRecordSet': {
                         'Name': hostname,
-                        'ResourceRecords': [{'Value': ipaddr,}],
+                        'ResourceRecords': [{'Value': ipaddr}],
                         'TTL': 60,
                         'Type': 'A',
                     },
@@ -129,7 +129,7 @@ def get_elastic_ip(hostname):
         eip = find_unused_eip()
         if eip is None:
             eip = make_eip()
-        setdns (hostname, eip)
+        set_route53 (hostname, eip['PublicIp'])
         return eip
 
     eip = find_eip_for_ipaddr(ipaddr)
@@ -272,11 +272,12 @@ def aserver_up(hostname):
                                 InstanceId = inst_id)
 
 
-    if len(params['Attachments']) == 0:
-        print("attaching volume")
-        resp = ec2c.attach_volume(Device="/dev/sdf",
-                                  InstanceId=inst_id,
-                                  VolumeId=params['VolumeId'])
+    if 'VolumeId' in params:
+        if len(params['Attachments']) == 0:
+            print("attaching volume")
+            resp = ec2c.attach_volume(Device="/dev/sdf",
+                                      InstanceId=inst_id,
+                                      VolumeId=params['VolumeId'])
 
     ipaddr = eip['PublicIp']
     shortname = hostname.split(".")[0]
