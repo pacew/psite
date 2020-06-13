@@ -18,3 +18,13 @@ https://cloud.google.com/compute/docs/reference/rest/v1/
 http://googleapis.github.io/google-api-python-client/docs/epy/index.html
 
 https://github.com/GoogleCloudPlatform/python-docs-samples/blob/master/compute/api/create_instance.py
+
+
+PWD=/
+LANG=C.UTF-8
+INVOCATION_ID=93d5db27e0e34cb0934427d1e7092c52
+TERM=vt220
+SHLVL=1
+JOURNAL_STREAM=9:26492
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
+_=/usr/bin/env

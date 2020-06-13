@@ -2,7 +2,6 @@
 
 import sys
 import os
-import json
 import configparser
 
 import googleapiclient.discovery
@@ -20,71 +19,78 @@ project_id = config["core"]["project"]
 adc_file = os.path.join(gcloud_dir, "legacy_credentials", acct_email, "adc.json")
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = adc_file
 
-def read_json(name, default=None):
-    try:
-        with open(name) as f:
-            return json.load(f)
-    except(OSError):
-        if default is not None:
-            return default
-        raise
-
-def write_json(name, val):
-    with open("TMP.json", "w") as f:
-        f.write(json.dumps(val, sort_keys=True, indent=2))
-        f.write("\n")
-    os.rename("TMP.json", name)
-
-gcfg = read_json("gcfg.json", dict())
-
 compute = googleapiclient.discovery.build('compute', 'v1')
-print(compute)
 
-if gcfg.get("img") is None:
-    print("refetching")
+def gserver_down(hostname):
+    del_resp = compute.instances().delete(project=project_id, 
+                                          zone=zone, 
+                                          instance=hostname).execute()
+
+    print(del_resp)
+
+def gserver_up(hostname):
     img = compute.images().getFromFamily(
         project='ubuntu-os-cloud', family='ubuntu-2004-lts').execute()
-    gcfg['img'] = img
 
-img = gcfg['img']
-source_disk_image = img['selfLink']
+    source_disk_image = img['selfLink']
 
-print(source_disk_image)
+    machine_type = f"zones/{zone}/machineTypes/n1-standard-1"
 
-machine_type = f"zones/{zone}/machineTypes/n1-standard-1"
-print("machine_type", machine_type)
+    disks = list()
+    disks.append({
+        'boot': True,
+        'autoDelete': True,
+        'initializeParams': {
+            'sourceImage': source_disk_image,
+        }
+    })
 
-disks = list()
-disks.append({
-    'boot': True,
-    'autoDelete': True,
-    'initializeParams': {
-        'sourceImage': source_disk_image,
+    net = [{
+        'network': 'global/networks/default',
+        'accessConfigs': [
+            {'type': 'ONE_TO_ONE_NAT', 'name': 'External NAT'}
+        ]
+    }]
+
+    metadata = {
+        'items': [{
+            'key': 'startup-script',
+            'value': open("gboot").read()
+        }]
     }
-})
 
-net = [{
-    'network': 'global/networks/default',
-    'accessConfigs': [
-        {'type': 'ONE_TO_ONE_NAT', 'name': 'External NAT'}
-    ]
-}]
+    config = dict()
+    config['name'] = hostname
+    config['machineType'] = machine_type
+    config['disks'] = disks
+    config['networkInterfaces'] = net
+    config['metadata'] = metadata
 
-config = dict()
-config['name'] = "test1"
-config['machineType'] = machine_type
-config['disks'] = disks
-config['networkInterfaces'] = net
+    resp = compute.instances().insert(
+        project=project_id,
+        zone=zone,
+        body=config).execute()
+    print(resp)
+    print(f"gcloud compute ssh {hostname}")
 
-resp = compute.instances().insert(
-    project=project_id,
-    zone=zone,
-    body=config).execute()
+def usage():
+    print("usage: gserver hostname [Down]")
+    sys.exit (1)
 
-print(resp)
-gcfg['resp'] = resp
+def main():
+    if len(sys.argv) < 2:
+        usage()
+        
+    hostname = sys.argv[1]
 
-write_json ("gcfg.json", gcfg)
+    if len(sys.argv) > 2:
+        if sys.argv[2] == "Down":
+            gserver_down(hostname)
+            sys.exit (0)
+        usage()
 
+    
+    gserver_up(hostname)
 
-
+if __name__ == "__main__":
+    main()

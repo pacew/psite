@@ -1,0 +1,12 @@
+#! /bin/bash
+
+exec > /tmp/gboot.out 2>&1
+
+set -x
+date
+
+echo x "$*"
+
+echo ""
+env
+
