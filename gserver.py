@@ -3,8 +3,14 @@
 import sys
 import os
 import configparser
+import time
 
 import googleapiclient.discovery
+
+from pprint import PrettyPrinter
+def pprint(val):
+    PrettyPrinter().pprint(val)
+
 
 zone = "us-east4-c"
 
@@ -71,7 +77,28 @@ def gserver_up(hostname):
         zone=zone,
         body=config).execute()
     print(resp)
+
+    print("machine is probably up")
+    while True:
+        print("trying to get ipaddr...")
+        resp = compute.instances().get(project=project_id, zone=zone, instance=hostname).execute()
+        iface = resp['networkInterfaces'][0]
+        cfg = iface['accessConfigs'][0]
+        ipaddr = cfg.get('natIP')
+        if ipaddr:
+            print(ipaddr)
+            break
+        time.sleep(.25)
+
+    print(f"ssh {ipaddr}")
     print(f"gcloud compute ssh {hostname}")
+
+def get_status(hostname):
+    resp = compute.instances().get(project=project_id, zone=zone, instance=hostname).execute()
+    iface = resp['networkInterfaces'][0]
+    cfg = iface['accessConfigs'][0]
+    ipaddr = cfg['natIP']
+    print(ipaddr)
 
 def usage():
     print("usage: gserver hostname [Down]")
@@ -86,11 +113,15 @@ def main():
     if len(sys.argv) > 2:
         if sys.argv[2] == "Down":
             gserver_down(hostname)
-            sys.exit (0)
-        usage()
+            sys.exit(0)
 
-    
-    gserver_up(hostname)
+        if sys.argv[2] == "up":
+            gserver_up(hostname)
+            sys.exit(0)
+
+        if sys.argv[2] == "status":
+            get_status(hostname)
+            sys.exit(0)
 
 if __name__ == "__main__":
     main()

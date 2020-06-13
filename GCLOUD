@@ -28,3 +28,7 @@ SHLVL=1
 JOURNAL_STREAM=9:26492
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
 _=/usr/bin/env
+
+https://cloud.google.com/compute/docs/instances/adding-removing-ssh-keys
+
+compute.instances().get(project=project, zone=zone, instance=instance)
