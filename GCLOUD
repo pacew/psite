@@ -5,3 +5,16 @@ curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyr
 sudo apt-get update && sudo apt-get install google-cloud-sdk
 
 gcloud init
+
+puts stuff in ~/.config/gcloud
+
+
+pip3 install --upgrade google-api-python-client
+pip3 install sqlite3
+
+
+https://cloud.google.com/compute/docs/reference/rest/v1/
+
+http://googleapis.github.io/google-api-python-client/docs/epy/index.html
+
+https://github.com/GoogleCloudPlatform/python-docs-samples/blob/master/compute/api/create_instance.py
