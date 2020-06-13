@@ -4,6 +4,9 @@ import sys
 import os
 import configparser
 import time
+import pwd
+import subprocess
+import random
 
 import googleapiclient.discovery
 
@@ -27,20 +30,54 @@ os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = adc_file
 
 compute = googleapiclient.discovery.build('compute', 'v1')
 
+def make_script():
+    p = pwd.getpwuid(os.getuid())
+    gboot_user = p.pw_name
+
+    s = list()
+    s.append("#! /bin/bash")
+
+    keyfile = os.path.join(os.getenv('HOME'), ".ssh/id_rsa.pub")
+    key = open(keyfile).read().strip()
+    
+    s.append(f"GBOOT_USER='{gboot_user}'")
+    s.append(f"GBOOT_PUBKEY='{key}'")
+
+    script = "\n".join(s)+"\n\n"
+
+    with open("gboot") as f:
+        script += f.read()
+    
+    with open("TMP.script", "w") as outf:
+        outf.write(script)
+
+    return script
+    
 def gserver_down(hostname):
+    machine_name = hostname.split('.')[0]
+
     del_resp = compute.instances().delete(project=project_id, 
                                           zone=zone, 
-                                          instance=hostname).execute()
+                                          instance=machine_name).execute()
 
     print(del_resp)
 
+
+
 def gserver_up(hostname):
+    ipaddr = subprocess.check_output(f"dig +short {hostname}",
+                                     shell=True,
+                                     encoding='utf8').strip()
+
+    machine_name = hostname.split('.')[0]
+
     img = compute.images().getFromFamily(
         project='ubuntu-os-cloud', family='ubuntu-2004-lts').execute()
 
     source_disk_image = img['selfLink']
 
     machine_type = f"zones/{zone}/machineTypes/n1-standard-1"
+    script = make_script ()
 
     disks = list()
     disks.append({
@@ -54,19 +91,19 @@ def gserver_up(hostname):
     net = [{
         'network': 'global/networks/default',
         'accessConfigs': [
-            {'type': 'ONE_TO_ONE_NAT', 'name': 'External NAT'}
+            {'type': 'ONE_TO_ONE_NAT', 'name': 'External NAT', 'natIP': ipaddr }
         ]
     }]
 
     metadata = {
         'items': [{
             'key': 'startup-script',
-            'value': open("gboot").read()
+            'value': script
         }]
     }
 
     config = dict()
-    config['name'] = hostname
+    config['name'] = machine_name
     config['machineType'] = machine_type
     config['disks'] = disks
     config['networkInterfaces'] = net
@@ -78,20 +115,11 @@ def gserver_up(hostname):
         body=config).execute()
     print(resp)
 
-    print("machine is probably up")
-    while True:
-        print("trying to get ipaddr...")
-        resp = compute.instances().get(project=project_id, zone=zone, instance=hostname).execute()
-        iface = resp['networkInterfaces'][0]
-        cfg = iface['accessConfigs'][0]
-        ipaddr = cfg.get('natIP')
-        if ipaddr:
-            print(ipaddr)
-            break
-        time.sleep(.25)
+    print()
+    print((f"for h in {ipaddr} {hostname} {machine_name};"
+           " do ssh-keygen -R $h > /dev/null 2>&1; done"))
+    print()
 
-    print(f"ssh {ipaddr}")
-    print(f"gcloud compute ssh {hostname}")
 
 def get_status(hostname):
     resp = compute.instances().get(project=project_id, zone=zone, instance=hostname).execute()

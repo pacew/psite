@@ -1,12 +1,5 @@
-#! /bin/bash
+# -*- mode:sh -*-
 
 exec > /tmp/gboot.out 2>&1
 
-set -x
-date
-
-echo x "$*"
-
-echo ""
-env
-
+echo $GBOOT_PUBKEY >> /home/${GBOOT_USER}/.ssh/authorized_keys
