@@ -32,3 +32,7 @@ _=/usr/bin/env
 https://cloud.google.com/compute/docs/instances/adding-removing-ssh-keys
 
 compute.instances().get(project=project, zone=zone, instance=instance)
+
+
+sudo mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard /dev/DEVICE_ID
+

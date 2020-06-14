@@ -2,4 +2,17 @@
 
 exec > /tmp/gboot.out 2>&1
 
+set -xe
+date
+
 echo $GBOOT_PUBKEY >> /home/${GBOOT_USER}/.ssh/authorized_keys
+
+
+if [ "x${GBOOT_UUID}" != "x" ]
+then
+    mdir=/g
+    mkdir -p ${mdir}
+    chown $GBOOT_USER ${mdir}
+    echo "UUID=\"${GBOOT_UUID}\" ${mdir} ext4 discard,defaults,nofail 0 2" \
+	 >> /etc/fstab
+fi

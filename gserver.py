@@ -30,7 +30,7 @@ os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = adc_file
 
 compute = googleapiclient.discovery.build('compute', 'v1')
 
-def make_script():
+def make_script(disk_uuid):
     p = pwd.getpwuid(os.getuid())
     gboot_user = p.pw_name
 
@@ -42,6 +42,7 @@ def make_script():
     
     s.append(f"GBOOT_USER='{gboot_user}'")
     s.append(f"GBOOT_PUBKEY='{key}'")
+    s.append(f"GBOOT_UUID='{disk_uuid}'")
 
     script = "\n".join(s)+"\n\n"
 
@@ -63,6 +64,30 @@ def gserver_down(hostname):
     print(del_resp)
 
 
+def disk_request(disk):
+    name = disk["name"]
+    return {
+        "kind": "compute#attachedDisk",
+        "source": f"projects/{project_id}/zones/{zone}/disks/{name}",
+        "deviceName": name,
+        "mode": "READ_WRITE",
+        "type": "PERSISTENT",
+        "autoDelete": False,
+        "forceAttach": False,
+        "boot": False,
+        "interface": "SCSI"
+    }
+
+def get_disk(label):
+    resp = compute.disks().list(project=project_id, zone=zone).execute()
+    disks = resp["items"]
+    for disk in disks:
+        if "labels" in disk:
+            if "name" in disk["labels"]:
+                if disk["labels"]["name"] == label:
+                    return disk
+    return None
+
 
 def gserver_up(hostname):
     ipaddr = subprocess.check_output(f"dig +short {hostname}",
@@ -77,7 +102,6 @@ def gserver_up(hostname):
     source_disk_image = img['selfLink']
 
     machine_type = f"zones/{zone}/machineTypes/n1-standard-1"
-    script = make_script ()
 
     disks = list()
     disks.append({
@@ -88,6 +112,13 @@ def gserver_up(hostname):
         }
     })
 
+    git_disk = get_disk("git")
+    if git_disk:
+        disks.append(disk_request(git_disk))
+
+    disk_uuid = git_disk["labels"].get("uuid", "")
+    script = make_script (disk_uuid)
+    
     net = [{
         'network': 'global/networks/default',
         'accessConfigs': [
