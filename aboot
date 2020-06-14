@@ -19,6 +19,21 @@ then
     hostname $ABOOT_HOSTNAME
 fi
 
+adduser --disabled-password --gecos "$ABOOT_GECOS" $ABOOT_USER
+
+addgroup sudo2
+adduser $ABOOT_USER sudo2
+echo '%sudo2 ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/99-sudo2
+
+s=/home/$ABOOT_USER/.ssh
+mkdir -m 700 -p $s
+
+cp /home/ubuntu/.ssh/authorized_keys $s/
+
+chown -R $ABOOT_USER:$ABOOT_USER $s
+chmod 700 $s
+
+
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get update -y
@@ -46,20 +61,6 @@ a2enmod rewrite
 a2enmod ssl
 
 echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
-adduser --disabled-password --gecos "$ABOOT_GECOS" $ABOOT_USER
-
-addgroup sudo2
-adduser $ABOOT_USER sudo2
-echo '%sudo2 ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/99-sudo2
-
-s=/home/$ABOOT_USER/.ssh
-mkdir -m 700 -p $s
-
-cp /home/ubuntu/.ssh/authorized_keys $s/
-
-chown -R $ABOOT_USER:$ABOOT_USER $s
-chmod 700 $s
 
 if [ "x$ABOOT_EBS_UUID" != "x" ]
 then

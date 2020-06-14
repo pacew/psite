@@ -7,7 +7,6 @@ date
 
 echo $GBOOT_PUBKEY >> /home/${GBOOT_USER}/.ssh/authorized_keys
 
-
 if [ "x${GBOOT_UUID}" != "x" ]
 then
     mdir=/g
@@ -15,4 +14,30 @@ then
     chown $GBOOT_USER ${mdir}
     echo "UUID=\"${GBOOT_UUID}\" ${mdir} ext4 discard,defaults,nofail 0 2" \
 	 >> /etc/fstab
+    mount /g &
 fi
+
+export DEBIAN_FRONTEND=noninteractive
+
+apt-get update -y
+
+apt-get install -y \
+	emacs-nox \
+	git \
+	build-essential \
+	python3-pip \
+	pwgen \
+	apache2 \
+	libapache2-mod-php \
+	apt-file \
+	pkg-config \
+	libreadline-dev \
+	php-xdebug \
+	mlocate
+
+a2enmod php7.3
+a2enmod headers
+a2enmod rewrite
+a2enmod ssl
+
+echo "ServerName localhost" >> /etc/apache2/apache2.conf
