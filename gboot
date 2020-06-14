@@ -14,7 +14,7 @@ then
     chown $GBOOT_USER ${mdir}
     echo "UUID=\"${GBOOT_UUID}\" ${mdir} ext4 discard,defaults,nofail 0 2" \
 	 >> /etc/fstab
-    mount /g &
+    (mount ${mdir} ; chown $GBOOT_USER ${mdir}) &
 fi
 
 export DEBIAN_FRONTEND=noninteractive
