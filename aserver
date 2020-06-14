@@ -217,7 +217,7 @@ def launch_instance(hostname):
 
     inst = ec2c.run_instances(
         ImageId=params['ami_id'],
-        InstanceType='t3.small',
+        InstanceType='t3.micro',
         Placement=place,
         KeyName=params['key_name'],
         MaxCount=1,

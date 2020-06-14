@@ -41,3 +41,5 @@ a2enmod rewrite
 a2enmod ssl
 
 echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+echo done

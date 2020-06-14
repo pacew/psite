@@ -70,3 +70,4 @@ then
     (mount ${mdir} ; chown $GBOOT_USER ${mdir}) &
 fi
 
+echo done
