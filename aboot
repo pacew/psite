@@ -64,9 +64,10 @@ echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 if [ "x$ABOOT_EBS_UUID" != "x" ]
 then
-    mkdir -p /a
-    chown $ABOOT_USER /a
-    echo "UUID=\"${ABOOT_EBS_UUID}\" /a xfs defaults,nofail 0 2" >> /etc/fstab
+    mdir=/a
+    mkdir -p ${mdir}
+    chown $ABOOT_USER ${mdir}
+    echo "UUID=\"${ABOOT_EBS_UUID}\" ${mdir} xfs defaults,nofail 0 2" >> /etc/fstab
     (mount ${mdir} ; chown $GBOOT_USER ${mdir}) &
 fi
 
