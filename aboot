@@ -68,7 +68,7 @@ then
     mkdir -p ${mdir}
     chown $ABOOT_USER ${mdir}
     echo "UUID=\"${ABOOT_EBS_UUID}\" ${mdir} xfs defaults,nofail 0 2" >> /etc/fstab
-    (mount ${mdir} ; chown $GBOOT_USER ${mdir}) &
+    (mount ${mdir} ; chown $ABOOT_USER ${mdir}) &
 fi
 
 echo done

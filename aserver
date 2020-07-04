@@ -40,7 +40,7 @@ def find_ami():
         Owners=['099720109477'],
         Filters = [
             { 'Name': 'architecture', 'Values': ['x86_64'] },
-            { 'Name': 'description', 'Values': ['Canonical, Ubuntu, 20.04*'] },
+            { 'Name': 'description', 'Values': ['Canonical, Ubuntu, 18.04*'] },
             { 'Name': 'name', 'Values': ['ubuntu/images/*'] },
             { 'Name': 'state', 'Values': ['available'] },
             { 'Name': 'root-device-type', 'Values': ['ebs'] },
