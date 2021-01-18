@@ -1,0 +1,11 @@
+gserver isn't quite automatic.
+
+Prerequisites:
+	run $ pip3 install google-api-python-client
+	A Google Cloud account where you can create VMs
+	  - be logged in with $ gcloud auth login
+	A Zone you'll put everything in (usually us-east4-c)
+	In the account, a static IP address in the Zone
+	A hostname that points to the IP address
+	optional: A disk in the Zone with a label, key "name" value "git"
+	  Format with $ sudo mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard /dev/DEVICE_ID

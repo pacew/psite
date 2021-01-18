@@ -42,7 +42,8 @@ def make_script(disk_uuid):
     
     s.append(f"GBOOT_USER='{gboot_user}'")
     s.append(f"GBOOT_PUBKEY='{key}'")
-    s.append(f"GBOOT_UUID='{disk_uuid}'")
+    if disk_uuid:
+        s.append(f"GBOOT_UUID='{disk_uuid}'")
 
     script = "\n".join(s)+"\n\n"
 
@@ -53,16 +54,21 @@ def make_script(disk_uuid):
         outf.write(script)
 
     return script
-    
+
+def get_machine_name(hostname):
+    if hostname.find(":") != -1:
+        hostname = hostname.split(":")[0]
+
+    return hostname.split('.')[0]
+
 def gserver_down(hostname):
-    machine_name = hostname.split('.')[0]
+    machine_name = get_machine_name(hostname)
 
     del_resp = compute.instances().delete(project=project_id, 
                                           zone=zone, 
                                           instance=machine_name).execute()
 
     print(del_resp)
-
 
 def disk_request(disk):
     name = disk["name"]
@@ -80,7 +86,7 @@ def disk_request(disk):
 
 def get_disk(label):
     resp = compute.disks().list(project=project_id, zone=zone).execute()
-    disks = resp["items"]
+    disks = resp.get("items", [])
     for disk in disks:
         if "labels" in disk:
             if "name" in disk["labels"]:
@@ -88,11 +94,13 @@ def get_disk(label):
                     return disk
     return None
 
-
 def gserver_up(hostname):
-    ipaddr = subprocess.check_output(f"dig +short {hostname}",
-                                     shell=True,
-                                     encoding='utf8').strip()
+    if hostname.find(":") != -1:
+        ipaddr = hostname.split(":")[1]
+    else:
+        ipaddr = subprocess.check_output(f"dig +short {hostname}",
+                                         shell=True,
+                                         encoding='utf8').strip()
 
     machine_name = hostname.split('.')[0]
 
@@ -116,9 +124,11 @@ def gserver_up(hostname):
     if git_disk:
         disks.append(disk_request(git_disk))
 
-    disk_uuid = git_disk["labels"].get("uuid", "")
-    script = make_script (disk_uuid)
-    
+        disk_uuid = git_disk["labels"].get("uuid", None)
+        script = make_script (disk_uuid)
+    else:
+        script = make_script(None)
+
     net = [{
         'network': 'global/networks/default',
         'accessConfigs': [
@@ -153,7 +163,8 @@ def gserver_up(hostname):
 
 
 def get_status(hostname):
-    resp = compute.instances().get(project=project_id, zone=zone, instance=hostname).execute()
+    machine_name = get_machine_name(hostname)
+    resp = compute.instances().get(project=project_id, zone=zone, instance=machine_name).execute()
     iface = resp['networkInterfaces'][0]
     cfg = iface['accessConfigs'][0]
     ipaddr = cfg['natIP']
@@ -173,14 +184,17 @@ def main():
         if sys.argv[2] == "Down":
             gserver_down(hostname)
             sys.exit(0)
-
-        if sys.argv[2] == "up":
+        elif sys.argv[2] == "up":
             gserver_up(hostname)
             sys.exit(0)
-
-        if sys.argv[2] == "status":
+        elif sys.argv[2] == "status":
             get_status(hostname)
             sys.exit(0)
+        elif sys.argv[2] == "disk_status":
+            get_disk(sys.argv[3])
+            sys.exit(0)
+        else:
+            usage()
 
 if __name__ == "__main__":
     main()
