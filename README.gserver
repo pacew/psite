@@ -9,3 +9,9 @@ Prerequisites:
 	A hostname that points to the IP address
 	optional: A disk in the Zone with a label, key "name" value "git"
 	  Format with $ sudo mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard /dev/DEVICE_ID
+
+Remaining questions before this is easy:
+  How to make a big enough boot disk so you can apt-get install big things?
+  Can you make your home directory be on /g?
+  Can you store big apt-get packages on /g, symlink them in, and then when you run your big apt-get line, preexisting packages on /g are already there?
+  
