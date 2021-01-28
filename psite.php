@@ -398,6 +398,9 @@ function get_seq ($db = NULL) {
 }
 
 function json_finish ($val) {
+	if (session_id ())
+		session_write_close ();
+
     do_commits ();
     if (@$_REQUEST['debug']) {
         echo ("<pre>\n");
