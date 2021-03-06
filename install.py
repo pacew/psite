@@ -414,7 +414,10 @@ def install(site_name_arg=None, conf_key_arg=None):
     cfg['dbname'] = psite.get_option("db_dbname", cfg['siteid'])
 
     setup_name_and_ports()
-    setup_ssl()
+    if psite.get_option('skip_ssl', 0) == 1:
+        cfg['ssl_enabled'] = False
+    else:
+        setup_ssl()
 
     setup_dirs()
     setup_urls()
