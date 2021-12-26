@@ -163,16 +163,28 @@ def setup_auth():
     cfg = psite.get_cfg()
 
     conf = ''
+
+    conf += f'  DBDriver sqlite3\n'
+
+    dbfile = os.path.join(cfg['src_dir'], 'users.db')
+    conf += f'  DBDParams "{dbfile}"\n'
+    conf += f'  DBDPrepareSQL "delete from session where key = %s" deletesession\n'
+    conf += f'  DBDPrepareSQL "update session set value = %s, expiry = %lld, key = %s where key = %s" updatesession\n'
+    conf += f'  DBDPrepareSQL "insert into session (value, expiry, key) values (%s, %lld, %s)" insertsession\n'
+    conf += f'  DBDPrepareSQL "select value from session where key = %s and (expiry = 0 or expiry > %lld)" selectsession\n'
+    conf += f'  DBDPrepareSQL "delete from session where expiry != 0 and expiry < %lld" cleansession\n'
+    conf += '\n'
+
     conf += f'  <Location "/form-auth">\n'
-    conf += f'    AuthFormProvider file\n'
+    conf += f'    AuthFormProvider dbd\n'
 
     afile = os.path.join(cfg['src_dir'], 'http-form-auth')
-    conf += f'    AuthUserFile "{afile}"\n'
     conf += f'    AuthType form\n'
     conf += f'    AuthName "realm"\n'
     conf += f'    ErrorDocument 401 /login.php\n'
     conf += f'    Session On\n'
-    conf += f'    SessionCookieName session path=/\n'
+    conf += f'    SessionDBDCookieName session path=/\n'
+    conf += f'    AuthDBDUserPWQuery "SELECT password FROM authn WHERE user_name = %s"\n'
     conf += f'    Require valid-user\n'
     conf += f'  </Location>\n'
 
