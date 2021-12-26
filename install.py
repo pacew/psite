@@ -164,10 +164,10 @@ def setup_auth():
 
     conf = ''
 
-    conf += f'  DBDriver sqlite3\n'
+    conf += f'  DBDriver pgsql\n'
 
-    dbfile = os.path.join(cfg['src_dir'], 'users.db')
-    conf += f'  DBDParams "{dbfile}"\n'
+    dbname = cfg['dbname']
+    conf += f'  DBDParams "dbname={dbname} user=apache"\n'
     conf += f'  DBDPrepareSQL "delete from session where key = %s" deletesession\n'
     conf += f'  DBDPrepareSQL "update session set value = %s, expiry = %lld, key = %s where key = %s" updatesession\n'
     conf += f'  DBDPrepareSQL "insert into session (value, expiry, key) values (%s, %lld, %s)" insertsession\n'
