@@ -175,18 +175,37 @@ def setup_auth():
     conf += f'  DBDPrepareSQL "delete from session where expiry != 0 and expiry < %lld" cleansession\n'
     conf += '\n'
 
-    conf += f'  <Location "/form-auth">\n'
-    conf += f'    AuthFormProvider dbd\n'
+    conf += f'  Session On \n'
+    conf += f'  SessionEnv On \n'
+    conf += f'  SessionDBDCookieName session path=/\n'
 
-    afile = os.path.join(cfg['src_dir'], 'http-form-auth')
+    conf += f'  <Location "/xyzzy">\n'
+    conf += f'    SetHandler form-login-handler\n'
+    conf += f'    AuthFormProvider dbd\n'
     conf += f'    AuthType form\n'
     conf += f'    AuthName "realm"\n'
-    conf += f'    ErrorDocument 401 /login.php\n'
-    conf += f'    Session On\n'
-    conf += f'    SessionDBDCookieName session path=/\n'
-    conf += f'    AuthDBDUserPWQuery "SELECT password FROM authn WHERE user_name = %s"\n'
+    conf += f'    AuthFormFakeBasicAuth On\n'
+    conf += f'    AuthDBDUserPWQuery "SELECT password, user_name FROM authn WHERE user_name = %s"\n'
     conf += f'    Require valid-user\n'
     conf += f'  </Location>\n'
+
+    conf += f'  <Location "/logout">\n'
+    conf += f'    SetHandler form-logout-handler\n'
+    conf += f'    AuthFormLogoutLocation /\n'
+    conf += f'    AuthName "realm"\n'
+    conf += f'  </Location>\n'
+    conf += f'\n'
+
+    conf += f'  <Location "/a">\n'
+    conf += f'    AuthFormProvider dbd\n'
+    conf += f'    AuthType form\n'
+    conf += f'    AuthName "realm"\n'
+    conf += f'    AuthFormFakeBasicAuth On\n'
+    conf += f'    AuthDBDUserPWQuery "SELECT password, user_name FROM authn WHERE user_name = %s"\n'
+    conf += f'    AuthFormLoginSuccessLocation /welcome.php\n'
+    conf += f'    Require valid-user\n'
+    conf += f'  </Location>\n'
+    conf += f'\n'
 
     return conf
 
