@@ -151,7 +151,31 @@ def make_virtual_host(ssl_flag, port):
     else:
         conf += "  DirectoryIndex index.php\n"
     conf += add_rewrites(ssl_flag)
+
+    if psite.get_option("auth", 0) == 1:
+        conf += setup_auth()
+
     conf += "</VirtualHost>\n"
+    return conf
+
+
+def setup_auth():
+    cfg = psite.get_cfg()
+
+    conf = ''
+    conf += f'  <Location "/form-auth">\n'
+    conf += f'    AuthFormProvider file\n'
+
+    afile = os.path.join(cfg['src_dir'], 'http-form-auth')
+    conf += f'    AuthUserFile "{afile}"\n'
+    conf += f'    AuthType form\n'
+    conf += f'    AuthName "realm"\n'
+    conf += f'    ErrorDocument 401 /login.php\n'
+    conf += f'    Session On\n'
+    conf += f'    SessionCookieName session path=/\n'
+    conf += f'    Require valid-user\n'
+    conf += f'  </Location>\n'
+
     return conf
 
 

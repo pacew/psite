@@ -724,9 +724,11 @@ function router () {
         exit ();
     }
 
-    if (preg_match ('/^[-_a-zA-Z0-9]+.php$/', $script_name)) { 
+    $basename = preg_replace (':.*/:', '', $script_name);
+
+    if (preg_match ('/^[-_a-zA-Z0-9]+.php$/', $basename)) { 
         /* safe name - only contains letters, digits, dash, or underline */
-        $script_fullname = sprintf ("%s/%s", $_SERVER['APP_ROOT'], $script_name);
+        $script_fullname = sprintf ("%s/%s", $_SERVER['APP_ROOT'], $basename);
         if (file_exists ($script_fullname)) {
             return ($script_fullname);
         }
