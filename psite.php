@@ -734,6 +734,7 @@ function router () {
         }
     }
     
-    echo ("route error " . h($script_name));
+    echo ("<p>missing script " . h($script_name) . "</p>");
+    echo ("<a href='/'>home</a>");
     exit ();
 }
