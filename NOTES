@@ -33,3 +33,8 @@ create policy allowing only PutObject and ListObject for the bucket
 create user with name like apply-pace and apply the policy
 
 
+===
+scratch mysql setup
+
+create user 'pace'@'localhost' identified with auth_socket;
+grant all privileges on *.* to 'pace'@'localhost' with grant option;
