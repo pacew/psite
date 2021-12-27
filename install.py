@@ -519,7 +519,7 @@ def tunnel_install():
 
 def do_credentials():
     cdir = 'credentials'
-    secret = os.path.join(cdir, 'secret.key')
+    secret = os.path.join(cdir, 'CLEARTEXT.key')
 
     if not os.path.exists(cdir):
         return
@@ -559,8 +559,8 @@ def do_credentials():
                   f' -in {secret}'
                   f' -out {access}')
 
-    current = PurePath(cdir, 'current.json')
-    enc = current.with_suffix('.enc')
+    cleartext = PurePath(cdir, 'CLEARTEXT.json')
+    enc = PurePath(cdir, 'credentials').with_suffix('.enc')
     new = PurePath(cdir, 'new.json')
 
     if os.path.exists(new):
@@ -574,20 +574,20 @@ def do_credentials():
               f' ; rm {new}')
 
     try:
-        current_mtime = os.path.getmtime(current)
+        mtime = os.path.getmtime(cleartext)
     except FileNotFoundError:
-        current_mtime = 0
+        mtime = 0
 
-    if os.path.exists(enc) and current_mtime < os.path.getmtime(enc):
-        print(f'# decode secrets')
-        print(f'rm -f {current}'
+    if os.path.exists(enc) and mtime < os.path.getmtime(enc):
+        print(f'# decode credentials')
+        print(f'rm -f {cleartext}'
               f' ; openssl enc'
               f' -d'
               f' -aes-256-cbc'
               f' -in {enc}'
-              f' -out {current}'
+              f' -out {cleartext}'
               f' -pass file:{secret}'
               f' -pbkdf2'
-              f' ; chmod a-w {current}')
+              f' ; chmod a-w {cleartext}')
 
 
