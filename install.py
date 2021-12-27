@@ -4,6 +4,8 @@ import re
 import getpass
 import random
 import pwd
+from pathlib import Path, PurePath
+import getpass
 
 import psite
 
@@ -494,6 +496,9 @@ def install(site_name_arg=None, conf_key_arg=None):
 
     psite.write_json("cfg.json", cfg)
 
+    do_credentials()
+
+
 def tunnel_install():
     if not os.path.isfile("tunnel-key.pub"):
         print("you must obtain tunnel-key.pub to install a tunnel")
@@ -510,3 +515,79 @@ def tunnel_install():
     print("sudo chmod 700 /home/tunnel/.ssh")
     print("sudo cp tunnel-key.pub /home/tunnel/.ssh/authorized_keys")
     print("sudo chown -R tunnel /home/tunnel/.ssh")
+
+
+def do_credentials():
+    cdir = 'credentials'
+    secret = os.path.join(cdir, 'secret.key')
+
+    if not os.path.exists(cdir):
+        return
+
+    user = getpass.getuser()
+    
+    user_pub = PurePath(cdir, user).with_suffix('.pub')
+    if not os.path.exists(user_pub):
+        print(f'cp ~/.ssh/id_rsa.pub {user_pub}')
+
+    access_file = PurePath(cdir, user).with_suffix('.access')
+
+    if not os.path.exists(secret):
+        if not os.path.exists(access_file):
+            print('# make secret')
+            print(f'openssl rand -out {secret} 32 ; '
+                  f'chmod a-w {secret}')
+        else:
+            print('# decrypt secret')
+            print(f'openssl rsautl'
+                  f' -decrypt'
+                  f' -inkey ~/.ssh/id_rsa'
+                  f' -in {access_file}'
+                  f' -out {secret}'
+                  f' ;'
+                  f' chmod a-w {secret}')
+
+    # make sure everyone has access
+    pubkeys = Path(cdir).glob('*.pub')
+    for pubkey in pubkeys:
+        access = PurePath(pubkey).with_suffix('.access')
+        if not os.path.exists(access):
+            print(f'# encrypt secret for {pubkey}')
+            print(f'openssl rsautl'
+                  f' -encrypt'
+                  f' -pubin -inkey <(ssh-keygen -e -f {pubkey} -m PKCS8)'
+                  f' -in {secret}'
+                  f' -out {access}')
+
+    current = PurePath(cdir, 'current.json')
+    enc = current.with_suffix('.enc')
+    new = PurePath(cdir, 'new.json')
+
+    if os.path.exists(new):
+        print(f'# import {new}')
+        print(f'openssl enc'
+              f' -aes-256-cbc'
+              f' -in {new}'
+              f' -out {enc}'
+              f' -pass file:{secret}'
+              f' -pbkdf2'
+              f' ; rm {new}')
+
+    try:
+        current_mtime = os.path.getmtime(current)
+    except FileNotFoundError:
+        current_mtime = 0
+
+    if os.path.exists(enc) and current_mtime < os.path.getmtime(enc):
+        print(f'# decode secrets')
+        print(f'rm -f {current}'
+              f' ; openssl enc'
+              f' -d'
+              f' -aes-256-cbc'
+              f' -in {enc}'
+              f' -out {current}'
+              f' -pass file:{secret}'
+              f' -pbkdf2'
+              f' ; chmod a-w {current}')
+
+
