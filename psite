@@ -73,6 +73,7 @@ cmds.append(["backup", psite.do_backup])
 cmds.append(["restore", psite.restore])
 cmds.append(["get-latest", psite.s3_get_latest])
 cmds.append(["tunnel-install", psite.tunnel_install])
+cmds.append(["edit-credentials", psite.edit_credentials])
 
 def cmd_do_cron():
     psite.do_backup()

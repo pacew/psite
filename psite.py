@@ -3,7 +3,7 @@ import os
 import socket
 from html.parser import HTMLParser
 
-from install import install, tunnel_install  # noqa: F401
+from install import install, tunnel_install, edit_credentials  # noqa: F401
 from db import (mkschema, query, fetch, get_seq, commit,  # noqa: F401
                 getvar, setvar, do_backup, restore, cmd_sql)
 

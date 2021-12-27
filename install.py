@@ -561,7 +561,7 @@ def do_credentials():
 
     cleartext = PurePath(cdir, 'CLEARTEXT.json')
     enc = PurePath(cdir, 'credentials').with_suffix('.enc')
-    new = PurePath(cdir, 'new.json')
+    new = PurePath(cdir, 'CLEARTEXT.new.json')
 
     if os.path.exists(new):
         print(f'# import {new}')
@@ -591,3 +591,6 @@ def do_credentials():
               f' ; chmod a-w {cleartext}')
 
 
+def edit_credentials():
+    print('cat credentials/CLEARTEXT.json > credentials/CLEARTEXT.new.json')
+    print('# then run psite install')
