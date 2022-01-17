@@ -38,3 +38,25 @@ scratch mysql setup
 
 create user 'pace'@'localhost' identified with auth_socket;
 grant all privileges on *.* to 'pace'@'localhost' with grant option;
+
+===
+scratch postgres setup
+apt install php-pgsql
+restart apache
+
+su postgres
+  createuser -s pace
+  createuser -s apache
+
+in /etc/postgresql/10/main/pg_hba.conf
+first line after comments
+local all apache ident map=web
+
+in pg_ident.conf
+web www-data apache
+web pace apache
+web root apache
+
+/etc/init.d/postgresql restart
+
+psite mkschema
