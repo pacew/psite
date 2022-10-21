@@ -60,3 +60,6 @@ web root apache
 /etc/init.d/postgresql restart
 
 psite mkschema
+
+================================================================
+possible aws setup example https://github.com/killbill/killbill
