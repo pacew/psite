@@ -58,7 +58,7 @@ function make_db_connection ($db, $dbparams, $create) {
                     $file = sprintf ("%s/psite_db_passwd", $cfg['aux_dir']);
                     $default_dbparams['password']=trim(file_get_contents($file));
                 } else {
-                    $default_dbparams['host'] = '';
+                    $default_dbparams['host'] = 'localhost';
                     $default_dbparams['user'] = $pw['name'];
                     $default_dbparams['password'] = '';
                 }
